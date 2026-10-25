@@ -52,7 +52,8 @@ public class GameEvents {
         JojoData d = JojoData.get(p);
 
         World level = p.world;
-        boolean sun = level.isDaytime() && level.canSeeSky(p.getPosition().up()) && !p.isInWaterRainOrBubble();
+        boolean sun = level.isDaytime() && level.canSeeSky(p.getPosition().up())
+                && !p.isInWater() && !level.isRainingAt(p.getPosition());
 
         // rigenerazione energia (l'Hamon ricarica di piu' sotto il sole)
         float regen = 0.25f;

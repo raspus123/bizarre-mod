@@ -392,9 +392,8 @@ public final class Abilities {
     private static boolean goldLife(ServerPlayerEntity p) {
         ServerWorld level = p.getServerWorld();
         BlockPos c = p.getPosition();
-        for (BlockPos pos : BlockPos.getAllInBox(c.add(-6, -2, -6), c.add(6, 2, 6))) {
-            BoneMealItem.applyBonemeal(new ItemStack(Items.BONE_MEAL), level, pos.toImmutable());
-        }
+        BlockPos.getAllInBox(c.add(-6, -2, -6), c.add(6, 2, 6)).forEach(pos ->
+                BoneMealItem.applyBonemeal(new ItemStack(Items.BONE_MEAL), level, pos.toImmutable()));
         give(p, fx(Effects.REGENERATION, 120, 1));
         p.heal(4f);
         particles(p, ParticleTypes.HAPPY_VILLAGER, p.getPosX(), p.getPosYHeight(1.0), p.getPosZ(), 40, 3, 1, 3, 0.0);
