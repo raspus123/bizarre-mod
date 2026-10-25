@@ -6,7 +6,8 @@ import com.example.bizarremod.data.JojoData;
 import com.example.bizarremod.data.Race;
 import com.example.bizarremod.data.StandType;
 import com.example.bizarremod.item.ActionItem;
-import java.util.function.Predicate;
+import com.example.bizarremod.item.TrainingItem;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
@@ -37,11 +38,29 @@ public class ModItems {
     public static final RegistryObject<Item> HUMAN_SERUM = ITEMS.register("human_serum",
             () -> new ActionItem(new Item.Properties().group(TAB).maxStackSize(16), ModItems::serum));
     public static final RegistryObject<Item> HAMON_SCROLL = ITEMS.register("hamon_scroll",
-            () -> new ActionItem(new Item.Properties().group(TAB).maxStackSize(1), learn(FightStyle.HAMON)));
+            () -> new TrainingItem(new Item.Properties().group(TAB).maxStackSize(1), FightStyle.HAMON, true, "tooltip.bizarremod.hamon_scroll"));
     public static final RegistryObject<Item> SPIN_SCROLL = ITEMS.register("spin_scroll",
-            () -> new ActionItem(new Item.Properties().group(TAB).maxStackSize(1), learn(FightStyle.SPIN)));
+            () -> new TrainingItem(new Item.Properties().group(TAB).maxStackSize(1), FightStyle.SPIN, true, "tooltip.bizarremod.spin_scroll"));
     public static final RegistryObject<Item> BOXING_MANUAL = ITEMS.register("boxing_manual",
-            () -> new ActionItem(new Item.Properties().group(TAB).maxStackSize(1), learn(FightStyle.BOXING)));
+            () -> new TrainingItem(new Item.Properties().group(TAB).maxStackSize(1), FightStyle.BOXING, true, "tooltip.bizarremod.boxing_manual"));
+
+    public static final RegistryObject<Item> STEEL_BALL = ITEMS.register("steel_ball",
+            () -> new Item(new Item.Properties().group(TAB).maxStackSize(1)));
+
+    public static boolean hasSteelBall(PlayerEntity player) {
+        return player.getHeldItemMainhand().getItem() == STEEL_BALL.get()
+                || player.getHeldItemOffhand().getItem() == STEEL_BALL.get();
+    }
+
+    public static final RegistryObject<Item> BOXING_GLOVES = ITEMS.register("boxing_gloves",
+            () -> new TrainingItem(new Item.Properties().group(TAB).maxStackSize(1), FightStyle.BOXING,
+                    false, "tooltip.bizarremod.boxing_gloves"));
+
+    /** Richiesto a ogni attivazione, anche con /jojo style boxing. Basta una delle due mani. */
+    public static boolean hasBoxingGloves(PlayerEntity player) {
+        return player.getHeldItemMainhand().getItem() == BOXING_GLOVES.get()
+                || player.getHeldItemOffhand().getItem() == BOXING_GLOVES.get();
+    }
 
     // ---- azioni degli oggetti ----
 
@@ -51,17 +70,10 @@ public class ModItems {
         JojoData d = JojoData.get(p);
         d.stand = s;
         d.standActive = false;
+        d.activeStandId = null;
         d.selectedMove = 0;
         p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.stand_gained", s.displayName()), false);
         return true;
-    }
-
-    private static Predicate<ServerPlayerEntity> learn(final FightStyle style) {
-        return p -> {
-            JojoData.get(p).style = style;
-            p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.style_learned", style.displayName()), false);
-            return true;
-        };
     }
 
     private static boolean stoneMask(ServerPlayerEntity p) {

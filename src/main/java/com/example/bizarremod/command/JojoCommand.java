@@ -23,10 +23,11 @@ public class JojoCommand {
         dispatcher.register(Commands.literal("jojo")
                 .requires(s -> s.hasPermissionLevel(2))
                 .then(branch("race", Race.values(), r -> r.id, (d, r) -> d.race = r))
-                .then(branch("style", FightStyle.values(), s -> s.id, (d, s) -> d.style = s))
+                .then(branch("style", FightStyle.values(), s -> s.id, (d, s) -> { d.style = s; d.selectedStyleMove = 0; }))
                 .then(branch("stand", StandType.values(), s -> s.id, (d, s) -> {
                     d.stand = s;
                     d.standActive = false;
+                    d.activeStandId = null;
                     d.selectedMove = 0;
                 })));
     }
@@ -42,6 +43,7 @@ public class JojoCommand {
                     for (E candidate : values) {
                         if (id.apply(candidate).equals(wanted)) {
                             setter.accept(JojoData.get(p), candidate);
+                            JojoData.save(p);
                             ctx.getSource().sendFeedback(new StringTextComponent(name + " = " + wanted), false);
                             return 1;
                         }

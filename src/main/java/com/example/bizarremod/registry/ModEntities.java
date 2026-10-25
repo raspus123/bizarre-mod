@@ -16,5 +16,6 @@ public class ModEntities {
             () -> EntityType.Builder.<StandEntity>create(StandEntity::new, EntityClassification.MISC)
                     .size(0.6f, 1.8f)
                     .immuneToFire()
+                    .disableSerialization()
                     .build("stand"));
 }

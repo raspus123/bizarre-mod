@@ -4,7 +4,7 @@ import com.example.bizarremod.entity.StandEntity;
 import com.example.bizarremod.network.ModNetwork;
 import com.example.bizarremod.registry.ModEntities;
 import com.example.bizarremod.registry.ModItems;
-import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -20,13 +20,17 @@ public class BizarreMod {
         ModEntities.ENTITIES.register(modBus);
         ModItems.ITEMS.register(modBus);
         modBus.addListener(this::commonSetup);
+        modBus.addListener(this::createEntityAttributes);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             ModNetwork.register();
-            GlobalEntityTypeAttributes.put(ModEntities.STAND.get(), StandEntity.createAttributes());
         });
+    }
+
+    private void createEntityAttributes(EntityAttributeCreationEvent event) {
+        event.put(ModEntities.STAND.get(), StandEntity.createAttributes());
     }
 
     public static ResourceLocation id(String path) {

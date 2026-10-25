@@ -10,5 +10,8 @@ public class ClientKeys {
     public static final KeyBinding CYCLE  = new KeyBinding("key.bizarremod.cycle",  GLFW.GLFW_KEY_G, CATEGORY);
     public static final KeyBinding USE    = new KeyBinding("key.bizarremod.use",    GLFW.GLFW_KEY_V, CATEGORY);
     public static final KeyBinding STYLE  = new KeyBinding("key.bizarremod.style",  GLFW.GLFW_KEY_C, CATEGORY);
+    public static final KeyBinding STYLE_CYCLE = new KeyBinding("key.bizarremod.style_cycle", GLFW.GLFW_KEY_B, CATEGORY);
+    public static final KeyBinding MENU = new KeyBinding("key.bizarremod.menu", GLFW.GLFW_KEY_J, CATEGORY);
+    public static final KeyBinding EDIT_HUD = new KeyBinding("key.bizarremod.edit_hud", GLFW.GLFW_KEY_K, CATEGORY);
     public static final KeyBinding RACE   = new KeyBinding("key.bizarremod.race",   GLFW.GLFW_KEY_X, CATEGORY);
 }

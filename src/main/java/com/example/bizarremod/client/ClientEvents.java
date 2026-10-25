@@ -18,12 +18,16 @@ public class ClientEvents {
     public static void onClientTick(TickEvent.ClientTickEvent e) {
         if (e.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.currentScreen != null) return;
+        if (mc.player == null) { ClientHud.clear(); return; }
+        if (mc.currentScreen != null) return;
+        if (ClientKeys.MENU.isPressed()) { mc.displayGuiScreen(new AbilityScreen()); return; }
+        if (ClientKeys.EDIT_HUD.isPressed()) { mc.displayGuiScreen(new HudEditorScreen()); return; }
 
         poll(ClientKeys.SUMMON, Abilities.SUMMON);
         poll(ClientKeys.CYCLE, Abilities.CYCLE);
         poll(ClientKeys.USE, Abilities.USE);
         poll(ClientKeys.STYLE, Abilities.STYLE);
+        poll(ClientKeys.STYLE_CYCLE, Abilities.STYLE_CYCLE);
         poll(ClientKeys.RACE, Abilities.RACE);
     }
 

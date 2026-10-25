@@ -19,6 +19,9 @@ public class ClientSetup {
         ClientRegistry.registerKeyBinding(ClientKeys.CYCLE);
         ClientRegistry.registerKeyBinding(ClientKeys.USE);
         ClientRegistry.registerKeyBinding(ClientKeys.STYLE);
+        ClientRegistry.registerKeyBinding(ClientKeys.STYLE_CYCLE);
         ClientRegistry.registerKeyBinding(ClientKeys.RACE);
+        ClientRegistry.registerKeyBinding(ClientKeys.MENU);
+        ClientRegistry.registerKeyBinding(ClientKeys.EDIT_HUD);
     }
 }

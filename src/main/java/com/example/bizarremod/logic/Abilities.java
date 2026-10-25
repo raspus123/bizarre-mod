@@ -6,6 +6,7 @@ import com.example.bizarremod.data.Race;
 import com.example.bizarremod.data.StandType;
 import com.example.bizarremod.entity.StandEntity;
 import com.example.bizarremod.registry.ModEntities;
+import com.example.bizarremod.registry.ModItems;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
@@ -46,11 +47,12 @@ import net.minecraft.world.server.ServerWorld;
  * Slot dei cooldown: 0-3 mosse dello stand, 4 stile, 5 razza.
  */
 public final class Abilities {
-    public static final int SUMMON = 0, CYCLE = 1, USE = 2, STYLE = 3, RACE = 4;
+    public static final int SUMMON = 0, CYCLE = 1, USE = 2, STYLE = 3, RACE = 4, STYLE_CYCLE = 5;
 
     private Abilities() {}
 
     public static void perform(ServerPlayerEntity p, int action) {
+        if (!p.isAlive() || p.isSpectator()) return;
         JojoData d = JojoData.get(p);
         switch (action) {
             case SUMMON: toggleStand(p, d); break;
@@ -58,6 +60,7 @@ public final class Abilities {
             case USE: standMove(p, d, d.selectedMove); break;
             case STYLE: styleMove(p, d); break;
             case RACE: raceMove(p, d); break;
+            case STYLE_CYCLE: cycleStyle(p, d); break;
             default: break;
         }
     }
@@ -66,19 +69,27 @@ public final class Abilities {
 
     private static void toggleStand(ServerPlayerEntity p, JojoData d) {
         if (d.stand == StandType.NONE) { msg(p, "message.bizarremod.no_stand"); return; }
-        d.standActive = !d.standActive;
         if (d.standActive) {
-            StandEntity e = ModEntities.STAND.get().create(p.getServerWorld());
-            if (e != null) {
-                e.setOwner(p);
-                e.setStandType(d.stand);
-                e.setLocationAndAngles(p.getPosX(), p.getPosY(), p.getPosZ(), p.rotationYaw, 0f);
-                p.getServerWorld().addEntity(e);
-            }
-            p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.stand_on", d.stand.displayName()), true);
-        } else {
+            d.standActive = false;
+            d.activeStandId = null;
             p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.stand_off", d.stand.displayName()), true);
+            return;
         }
+        StandEntity entity = ModEntities.STAND.get().create(p.getServerWorld());
+        if (entity == null) { msg(p, "message.bizarremod.summon_failed"); return; }
+        entity.setOwner(p);
+        entity.setStandType(d.stand);
+        entity.setLocationAndAngles(p.getPosX(), p.getPosY(), p.getPosZ(), p.rotationYaw, 0f);
+        if (!p.getServerWorld().addEntity(entity)) {
+            entity.remove();
+            d.activeStandId = null;
+            msg(p, "message.bizarremod.summon_failed");
+            return;
+        }
+        // Imposta lo stato solo dopo lo spawn riuscito; nessuna protezione gratuita se fallisce.
+        d.activeStandId = entity.getUniqueID();
+        d.standActive = true;
+        p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.stand_on", d.stand.displayName()), true);
     }
 
     /** Passa alla mossa successiva dello stand (raffica -> abilita' 1 -> 2 -> 3 -> raffica). */
@@ -577,22 +588,199 @@ public final class Abilities {
 
     // ================================================================== STILI
 
-    private static void styleMove(ServerPlayerEntity p, JojoData d) {
-        if (d.style == FightStyle.NONE) { msg(p, "message.bizarremod.no_style"); return; }
-        if (!ready(p, d, 4, 30, false)) return;
-        boolean ok = false;
-        switch (d.style) {
-            case HAMON: ok = hamon(p, d); break;
-            case SPIN: ok = spin(p); break;
-            case BOXING: ok = boxing(p); break;
-            default: break;
+    private static final Map<FightStyle, Move[]> STYLE_MOVES = new EnumMap<FightStyle, Move[]>(FightStyle.class);
+    static {
+        STYLE_MOVES.put(FightStyle.HAMON, new Move[] {
+            m("Sunlight Yellow Overdrive", 30, 60, p -> hamon(p, JojoData.get(p))),
+            m("Scarlet Overdrive", 25, 80, Abilities::scarletOverdrive),
+            m("Respirazione Hamon", 20, 200, Abilities::hamonBreathing),
+            m("Onda solare", 35, 120, Abilities::solarWave)
+        });
+        STYLE_MOVES.put(FightStyle.SPIN, new Move[] {
+            m("Golden Spin", 30, 60, Abilities::spin),
+            m("Steel Ball", 20, 60, Abilities::steelBall),
+            m("Vortice rotante", 30, 120, Abilities::spinVortex),
+            m("Rotazione difensiva", 25, 180, Abilities::spinGuard)
+        });
+        STYLE_MOVES.put(FightStyle.BOXING, new Move[] {
+            m("Jab combinati", 20, 40, Abilities::boxing),
+            m("Gancio pesante", 30, 90, Abilities::boxingHook),
+            m("Montante", 25, 70, Abilities::boxingUppercut),
+            m("Guardia del pugile", 20, 160, Abilities::boxingGuard)
+        });
+    }
+
+    private static Move styleTechnique(FightStyle style, int index) {
+        Move[] moves = STYLE_MOVES.get(style);
+        return moves == null || index < 0 || index >= moves.length ? null : moves[index];
+    }
+
+    public static String styleMoveName(FightStyle style, int index) {
+        Move technique = styleTechnique(style, index);
+        return technique == null ? "-" : technique.name;
+    }
+
+    /** Read-only metadata for the authoritative server-to-client HUD snapshot. */
+    public static float hudCost(boolean style, JojoData data, int index) {
+        Move m = style ? styleTechnique(data.style, index) : move(data.stand, index);
+        return m == null ? 0 : m.cost;
+    }
+
+    public static int hudDuration(boolean style, JojoData data, int index) {
+        Move m = style ? styleTechnique(data.style, index) : move(data.stand, index);
+        return m == null ? 0 : m.cooldown;
+    }
+
+    private static void cycleStyle(ServerPlayerEntity p, JojoData data) {
+        if (data.style == FightStyle.NONE) { msg(p, "message.bizarremod.no_style"); return; }
+        data.selectedStyleMove = (data.selectedStyleMove + 1) % 4;
+        JojoData.save(p);
+        Move technique = styleTechnique(data.style, data.selectedStyleMove);
+        if (technique == null) return;
+        p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.style_selected",
+                data.selectedStyleMove + 1, technique.name, (int) technique.cost, technique.cooldown / 20.0F), true);
+        sound(p, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP);
+    }
+
+    private static void styleMove(ServerPlayerEntity p, JojoData data) {
+        if (data.style == FightStyle.NONE) { msg(p, "message.bizarremod.no_style"); return; }
+        if (data.style == FightStyle.BOXING && !ModItems.hasBoxingGloves(p)) {
+            msg(p, "message.bizarremod.gloves_required");
+            return;
         }
-        if (ok) commit(p, d, 4, 30, 60);
+        if (data.style == FightStyle.SPIN && !ModItems.hasSteelBall(p)) {
+            msg(p, "message.bizarremod.steel_ball_required");
+            return;
+        }
+        int index = data.selectedStyleMove;
+        Move technique = styleTechnique(data.style, index);
+        if (technique == null) return;
+        if (p.world.getGameTime() < data.styleCooldowns[index]) {
+            msg(p, "message.bizarremod.cooldown");
+            return;
+        }
+        // Slot4 e' il breve blocco globale: cambiare tecnica non permette spam nello stesso tick.
+        if (!ready(p, data, 4, technique.cost, false)) return;
+        if (technique.action.test(p)) {
+            commit(p, data, 4, technique.cost, 8);
+            data.styleCooldowns[index] = p.world.getGameTime() + technique.cooldown;
+            p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.style_used", technique.name), true);
+        }
+    }
+
+    private static boolean scarletOverdrive(ServerPlayerEntity p) {
+        LivingEntity target = styleTarget(p, 4.5);
+        if (target == null) return false;
+        boolean undead = target.getCreatureAttribute() == CreatureAttribute.UNDEAD
+                || (target instanceof PlayerEntity && JojoData.get((PlayerEntity) target).race != Race.HUMAN);
+        hit(p, target, undead ? 14f : 8f, 0.7);
+        target.setFire(6);
+        particles(p, ParticleTypes.FLAME, target.getPosX(), target.getPosYHeight(0.5), target.getPosZ(), 24, 0.4, 0.5, 0.4, 0.03);
+        sound(p, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT);
+        return true;
+    }
+
+    private static boolean hamonBreathing(ServerPlayerEntity p) {
+        if (JojoData.get(p).race != Race.HUMAN) {
+            msg(p, "message.bizarremod.hamon_human_only");
+            return false;
+        }
+        p.heal(4f);
+        give(p, fx(Effects.REGENERATION, 100, 0), fx(Effects.RESISTANCE, 60, 0));
+        particles(p, ParticleTypes.FIREWORK, p.getPosX(), p.getPosYHeight(0.5), p.getPosZ(), 25, 0.4, 0.6, 0.4, 0.02);
+        return true;
+    }
+
+    private static boolean solarWave(ServerPlayerEntity p) {
+        List<LivingEntity> targets = styleFront(p, 6);
+        if (targets.isEmpty()) { msg(p, "message.bizarremod.no_target"); return false; }
+        for (LivingEntity target : targets) {
+            hit(p, target, 6f, 0.8);
+            give(target, fx(Effects.SLOWNESS, 80, 1), fx(Effects.WEAKNESS, 60, 0));
+            beam(p, target.getPositionVec().add(0, target.getHeight() * 0.5, 0), ParticleTypes.FIREWORK);
+        }
+        return true;
+    }
+
+    /** Colpo hitscan da 14 blocchi: richiede visuale libera e non crea entita' proiettile. */
+    private static boolean steelBall(ServerPlayerEntity p) {
+        LivingEntity target = styleTarget(p, 14);
+        if (target == null) return false;
+        beam(p, target.getPositionVec().add(0, target.getHeight() * 0.5, 0), ParticleTypes.CRIT);
+        hit(p, target, 8f, 0.4);
+        give(target, fx(Effects.SLOWNESS, 60, 1));
+        return true;
+    }
+
+    private static boolean spinVortex(ServerPlayerEntity p) {
+        List<LivingEntity> targets = around(p, 4);
+        targets.removeIf(target -> !validStyleTarget(p, target) || p.getDistanceSq(target) > 16);
+        if (targets.isEmpty()) { msg(p, "message.bizarremod.no_target"); return false; }
+        for (LivingEntity target : targets) {
+            hit(p, target, 6f, 1.2);
+            give(target, fx(Effects.SLOWNESS, 60, 1));
+        }
+        particles(p, ParticleTypes.SWEEP_ATTACK, p.getPosX(), p.getPosYHeight(0.5), p.getPosZ(), 18, 2, 0.4, 2, 0);
+        return true;
+    }
+
+    private static boolean spinGuard(ServerPlayerEntity p) {
+        give(p, fx(Effects.RESISTANCE, 100, 1), fx(Effects.SPEED, 60, 0));
+        particles(p, ParticleTypes.CRIT, p.getPosX(), p.getPosYHeight(0.5), p.getPosZ(), 25, 0.7, 0.7, 0.7, 0.03);
+        return true;
+    }
+
+    private static boolean boxingHook(ServerPlayerEntity p) {
+        LivingEntity target = styleTarget(p, 3);
+        if (target == null) return false;
+        hit(p, target, 10f, 1.3);
+        give(target, fx(Effects.WEAKNESS, 60, 0));
+        sound(p, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG);
+        return true;
+    }
+
+    private static boolean boxingUppercut(ServerPlayerEntity p) {
+        LivingEntity target = styleTarget(p, 3);
+        if (target == null) return false;
+        hit(p, target, 7f, 0.2);
+        target.setMotion(target.getMotion().add(0, 0.65, 0));
+        target.velocityChanged = true;
+        give(target, fx(Effects.SLOWNESS, 40, 1));
+        sound(p, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT);
+        return true;
+    }
+
+    private static boolean boxingGuard(ServerPlayerEntity p) {
+        give(p, fx(Effects.RESISTANCE, 80, 1), fx(Effects.SLOWNESS, 40, 0));
+        sound(p, SoundEvents.ITEM_SHIELD_BLOCK);
+        return true;
+    }
+
+    /** Evita alleati, spettatori, muri e PvP disabilitato per le tecniche degli stili. */
+    private static boolean validStyleTarget(ServerPlayerEntity p, LivingEntity target) {
+        if (!target.isAlive() || target == p || target instanceof StandEntity
+                || target.isSpectator() || target.isOnSameTeam(p) || !p.canEntityBeSeen(target)) return false;
+        return !(target instanceof PlayerEntity) || p.canAttackPlayer((PlayerEntity) target);
+    }
+
+    private static LivingEntity styleTarget(ServerPlayerEntity p, double range) {
+        LivingEntity target = lookedAt(p, range);
+        if (target == null || !validStyleTarget(p, target)) {
+            msg(p, "message.bizarremod.no_target");
+            return null;
+        }
+        return target;
+    }
+
+    private static List<LivingEntity> styleFront(ServerPlayerEntity p, double range) {
+        List<LivingEntity> targets = targetsInFront(p, range);
+        targets.removeIf(target -> !validStyleTarget(p, target));
+        return targets;
     }
 
     // Hamon: onda d'energia solare. Devastante su non morti e su chi non e' umano.
     private static boolean hamon(ServerPlayerEntity p, JojoData d) {
-        List<LivingEntity> targets = targetsInFront(p, 5);
+        List<LivingEntity> targets = styleFront(p, 5);
         if (targets.isEmpty()) { msg(p, "message.bizarremod.no_target"); return false; }
         boolean hitUndead = false;
         for (LivingEntity t : targets) {
@@ -613,7 +801,7 @@ public final class Abilities {
 
     // Spin: scatto rotante che ferisce e fa sanguinare
     private static boolean spin(ServerPlayerEntity p) {
-        List<LivingEntity> targets = targetsInFront(p, 4);
+        List<LivingEntity> targets = styleFront(p, 4);
         Vector3d look = p.getLookVec();
         p.setMotion(look.x * 1.6, Math.max(0.25, look.y * 0.8), look.z * 1.6);
         p.velocityChanged = true;
@@ -629,9 +817,14 @@ public final class Abilities {
 
     // Pugilato: jab veloci e velocita'
     private static boolean boxing(ServerPlayerEntity p) {
-        boolean ok = barrage(p, 4.5, 4, 2.0F, "JAB JAB JAB!", 0);
-        if (ok) give(p, fx(Effects.SPEED, 100, 1));
-        return ok;
+        List<LivingEntity> targets = styleFront(p, 3);
+        if (targets.isEmpty()) { msg(p, "message.bizarremod.no_target"); return false; }
+        for (LivingEntity target : targets) {
+            for (int jab = 0; jab < 4 && target.isAlive(); jab++) hit(p, target, 2f, 0.1);
+        }
+        give(p, fx(Effects.SPEED, 60, 0));
+        sound(p, SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP);
+        return true;
     }
 
     // ================================================================== RAZZE

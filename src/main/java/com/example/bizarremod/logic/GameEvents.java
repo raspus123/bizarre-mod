@@ -3,6 +3,12 @@ package com.example.bizarremod.logic;
 import com.example.bizarremod.BizarreMod;
 import com.example.bizarremod.command.JojoCommand;
 import com.example.bizarremod.data.FightStyle;
+import com.example.bizarremod.registry.ModItems;
+import java.util.UUID;
+import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.ai.attributes.Attributes;
+import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import com.example.bizarremod.data.JojoData;
 import com.example.bizarremod.data.Race;
 import com.example.bizarremod.data.StandType;
@@ -24,18 +30,47 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = BizarreMod.MOD_ID)
 public class GameEvents {
+    private static final UUID BOXING_SPEED_ID = UUID.fromString("b8357cc0-451d-4f8e-98c8-f6f279778b06");
+    private static final AttributeModifier BOXING_SPEED = new AttributeModifier(
+            BOXING_SPEED_ID, "Boxing gloves footwork", 0.20D, AttributeModifier.Operation.MULTIPLY_TOTAL);
 
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent e) {
         if (e.getPlayer() instanceof ServerPlayerEntity) {
-            JojoData.get(e.getPlayer()).standActive = false;
+            JojoData data = JojoData.get(e.getPlayer());
+            data.standActive = false;
+            data.activeStandId = null;
         }
+    }
+
+    @SubscribeEvent
+    public static void onSave(PlayerEvent.SaveToFile event) {
+        if (event.getPlayer() instanceof ServerPlayerEntity) JojoData.save(event.getPlayer());
     }
 
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent e) {
         if (e.getPlayer() instanceof ServerPlayerEntity) {
+            JojoData data = JojoData.get(e.getPlayer());
+            data.standActive = false;
+            data.activeStandId = null;
             JojoData.saveAndForget(e.getPlayer());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
+        JojoData data = JojoData.get(event.getPlayer());
+        data.standActive = false;
+        data.activeStandId = null;
+    }
+
+    @SubscribeEvent
+    public static void onDeath(LivingDeathEvent event) {
+        if (event.getEntityLiving() instanceof ServerPlayerEntity) {
+            JojoData data = JojoData.get((ServerPlayerEntity) event.getEntityLiving());
+            data.standActive = false;
+            data.activeStandId = null;
         }
     }
 
@@ -60,6 +95,18 @@ public class GameEvents {
         if (d.style == FightStyle.HAMON && sun) regen += 0.15f;
         d.energy = Math.min(100f, d.energy + regen);
 
+        ModifiableAttributeInstance speed = p.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (speed != null) {
+            boolean equipped = d.style == FightStyle.BOXING && ModItems.hasBoxingGloves(p);
+            if (equipped && speed.getModifier(BOXING_SPEED_ID) == null) speed.applyNonPersistentModifier(BOXING_SPEED);
+            if (!equipped && speed.getModifier(BOXING_SPEED_ID) != null) speed.removeModifier(BOXING_SPEED_ID);
+        }
+
+        if (p.ticksExisted % 5 == 0) {
+            com.example.bizarremod.network.ModNetwork.CHANNEL.send(
+                    net.minecraftforge.fml.network.PacketDistributor.PLAYER.with(() -> p),
+                    new com.example.bizarremod.network.HudStatePacket(p, d));
+        }
         if (p.ticksExisted % 20 != 0) return;
 
         // ---- salvataggio periodico nei dati del giocatore (ogni 10 secondi) ----
@@ -90,15 +137,10 @@ public class GameEvents {
         }
 
         // ---- passiva dello stile ----
-        if (d.style == FightStyle.BOXING) eff(p, Effects.SPEED, 60, 0);
 
-        // ---- barra di stato ogni 3 secondi ----
-        if (p.ticksExisted % 60 == 0
-                && (d.race != Race.HUMAN || d.style != FightStyle.NONE || d.stand != StandType.NONE)) {
-            p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.status",
-                    (int) d.energy, d.race.displayName(), d.style.displayName(), d.stand.displayName(),
-                    Abilities.moveName(d.stand, d.selectedMove)), true);
-        }
+
+        // Status is now displayed by the movable client HUD.
+
     }
 
     @SubscribeEvent

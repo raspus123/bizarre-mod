@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PGP",
+    "PSP",
+    "PYP"
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:paper"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "S": {
+      "item": "minecraft:sunflower"
+    },
+    "Y": {
+      "item": "minecraft:yellow_dye"
+    }
+  },
+  "result": {
+    "item": "bizarremod:hamon_scroll",
+    "count": 1
+  }
+}

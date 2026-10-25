@@ -20,7 +20,8 @@ public class ActionPacket {
         final NetworkEvent.Context context = ctx.get();
         context.enqueueWork(() -> {
             ServerPlayerEntity sender = context.getSender();
-            if (sender != null) Abilities.perform(sender, msg.action);
+            if (sender != null && msg.action >= 0 && msg.action <= Abilities.STYLE_CYCLE)
+                Abilities.perform(sender, msg.action);
         });
         context.setPacketHandled(true);
     }

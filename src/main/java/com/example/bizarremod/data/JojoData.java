@@ -15,6 +15,9 @@ public class JojoData {
     public FightStyle style = FightStyle.NONE;
     public StandType stand = StandType.NONE;
     public boolean standActive = false;           // non salvato: al login e' sempre false
+    public UUID activeStandId;                   // solo runtime, mai persistito
+    public int selectedStyleMove = 0;            // 0-3, indipendente dallo Stand
+    public final long[] styleCooldowns = new long[4];
     public float energy = 100f;
     public int selectedMove = 0;                  // 0 = raffica, 1-3 = abilita' dello stand
     public final long[] cooldowns = new long[6];  // 0-3 mosse stand, 4 stile, 5 razza (non salvati)
@@ -48,6 +51,7 @@ public class JojoData {
         t.putString("stand", stand.id);
         t.putFloat("energy", energy);
         t.putInt("move", selectedMove);
+        t.putInt("styleMove", selectedStyleMove);
         return t;
     }
 
@@ -57,5 +61,6 @@ public class JojoData {
         stand = StandType.byId(t.getString("stand"));
         energy = t.contains("energy") ? t.getFloat("energy") : 100f;
         selectedMove = Math.floorMod(t.getInt("move"), 4);
+        selectedStyleMove = Math.floorMod(t.getInt("styleMove"), 4);
     }
 }

@@ -1,0 +1,21 @@
+{
+  "version": "1.2.0",
+  "java_files_syntax_parsed": 26,
+  "parser": "javalang",
+  "syntax_errors": [],
+  "static_suites": {
+    "verify_project.py": {
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_boxing_equipment_guards (__main__.ProjectChecks.test_boxing_equipment_guards) ... ok\ntest_four_moves_each (__main__.ProjectChecks.test_four_moves_each) ... ok\ntest_item_resources (__main__.ProjectChecks.test_item_resources) ... ok\ntest_json_valid (__main__.ProjectChecks.test_json_valid) ... ok\ntest_recipe_unlocks (__main__.ProjectChecks.test_recipe_unlocks) ... ok\ntest_release_version (__main__.ProjectChecks.test_release_version) ... ok\ntest_stand_forge_attributes (__main__.ProjectChecks.test_stand_forge_attributes) ... ok\ntest_stand_state_and_cleanup (__main__.ProjectChecks.test_stand_state_and_cleanup) ... ok\ntest_style_input_and_protocol (__main__.ProjectChecks.test_style_input_and_protocol) ... ok\ntest_style_target_rules (__main__.ProjectChecks.test_style_target_rules) ... ok\ntest_translations (__main__.ProjectChecks.test_translations) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.013s\n\nOK\n"
+    },
+    "verify_hud.py": {
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_all_gui_keys_translated (__main__.HudChecks.test_all_gui_keys_translated) ... ok\ntest_controls_and_persistence (__main__.HudChecks.test_controls_and_persistence) ... ok\ntest_hud_does_not_cancel_other_overlays (__main__.HudChecks.test_hud_does_not_cancel_other_overlays) ... ok\ntest_layout_math_screen_bounds (__main__.HudChecks.test_layout_math_screen_bounds) ... ok\ntest_selection_is_bounded (__main__.HudChecks.test_selection_is_bounded) ... ok\ntest_snapshot_is_owner_only_and_authoritative (__main__.HudChecks.test_snapshot_is_owner_only_and_authoritative) ... ok\ntest_spin_gate_before_resources (__main__.HudChecks.test_spin_gate_before_resources) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.006s\n\nOK\n"
+    }
+  },
+  "forge_compiled": false,
+  "minecraft_tested": false,
+  "inventory_hud_tested": false
+}
