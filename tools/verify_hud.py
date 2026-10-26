@@ -43,7 +43,7 @@ class HudChecks(unittest.TestCase):
         self.assertNotIn('inventoryhud',layout.lower())
     def test_controls_and_persistence(self):
         t=read('client/HudEditorScreen.java')
-        for name in ['mouseClicked','mouseDragged','mouseReleased','mouseScrolled','keyPressed','onClose','removed']:
+        for name in ['mouseClicked','mouseDragged','mouseReleased','mouseScrolled','keyPressed','onClose']:
             self.assertIn(name+'(',t)
         self.assertIn('HudLayout.get().save()',t)
         keys=read('client/ClientKeys.java')

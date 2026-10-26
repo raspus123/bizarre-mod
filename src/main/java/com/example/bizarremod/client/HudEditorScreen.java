@@ -53,6 +53,5 @@ public class HudEditorScreen extends Screen {
         return super.keyPressed(key,scan,mods);
     }
     @Override public void onClose(){HudLayout.get().save();super.onClose();}
-    @Override public void removed(){HudLayout.get().save();super.removed();}
     @Override public boolean isPauseScreen(){return false;}
 }
