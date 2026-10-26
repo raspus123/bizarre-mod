@@ -5,6 +5,7 @@ import com.example.bizarremod.data.JojoData;
 import com.example.bizarremod.data.Race;
 import com.example.bizarremod.data.StandType;
 import com.example.bizarremod.entity.StandEntity;
+import com.example.bizarremod.entity.SteelBallEntity;
 import com.example.bizarremod.registry.ModEntities;
 import com.example.bizarremod.registry.ModItems;
 import java.util.Comparator;
@@ -597,8 +598,8 @@ public final class Abilities {
             m("Onda solare", 35, 120, Abilities::solarWave)
         });
         STYLE_MOVES.put(FightStyle.SPIN, new Move[] {
+            m("Lancio della sfera", 20, 60, Abilities::throwSteelBall),
             m("Golden Spin", 30, 60, Abilities::spin),
-            m("Steel Ball", 20, 60, Abilities::steelBall),
             m("Vortice rotante", 30, 120, Abilities::spinVortex),
             m("Rotazione difensiva", 25, 180, Abilities::spinGuard)
         });
@@ -702,14 +703,36 @@ public final class Abilities {
         return true;
     }
 
-    /** Colpo hitscan da 14 blocchi: richiede visuale libera e non crea entita' proiettile. */
-    private static boolean steelBall(ServerPlayerEntity p) {
-        LivingEntity target = styleTarget(p, 14);
-        if (target == null) return false;
-        beam(p, target.getPositionVec().add(0, target.getHeight() * 0.5, 0), ParticleTypes.CRIT);
-        hit(p, target, 8f, 0.4);
-        give(target, fx(Effects.SLOWNESS, 60, 1));
+    /**
+     * Lancia una vera sfera d'acciaio (proiettile rettilineo a 2,4 blocchi/tick).
+     * La sfera in mano non viene consumata: quella lanciata sparisce all'impatto o dopo 2 secondi.
+     */
+    private static boolean throwSteelBall(ServerPlayerEntity p) {
+        SteelBallEntity ball = new SteelBallEntity(p.world, p);
+        Vector3d look = p.getLookVec();
+        ball.setPosition(p.getPosX() + look.x * 0.6, p.getPosYEye() - 0.15 + look.y * 0.6, p.getPosZ() + look.z * 0.6);
+        ball.setMotion(look.scale(2.4));
+        if (!p.getServerWorld().addEntity(ball)) {
+            msg(p, "message.bizarremod.summon_failed");
+            return false;
+        }
+        particles(p, ParticleTypes.CRIT, p.getPosX() + look.x, p.getPosYEye() + look.y * 0.5, p.getPosZ() + look.z,
+                8, 0.1, 0.1, 0.1, 0.05);
+        sound(p, SoundEvents.ENTITY_SNOWBALL_THROW);
+        say(p, "STEEL BALL!");
         return true;
+    }
+
+    /** Effetto dell'impatto della sfera: richiamato dal proiettile, sempre lato server. */
+    public static void steelBallHit(ServerPlayerEntity owner, LivingEntity target) {
+        if (!target.isAlive() || target == owner || target instanceof StandEntity
+                || target.isSpectator() || target.isOnSameTeam(owner)) return;
+        if (target instanceof PlayerEntity && !owner.canAttackPlayer((PlayerEntity) target)) return;
+        hit(owner, target, 9f, 0.6);
+        give(target, fx(Effects.SLOWNESS, 60, 1));
+        particles(owner, ParticleTypes.CRIT, target.getPosX(), target.getPosYHeight(0.5), target.getPosZ(),
+                16, 0.3, 0.4, 0.3, 0.2);
+        sound(owner, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT);
     }
 
     private static boolean spinVortex(ServerPlayerEntity p) {

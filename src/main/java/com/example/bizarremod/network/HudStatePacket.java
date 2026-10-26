@@ -13,7 +13,7 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 /** A small owner-only snapshot. Never reads the server JojoData cache on the client. */
 public class HudStatePacket {
-    public String stand = "", style = "", styleId = "none";
+    public String stand = "", style = "", styleId = "none", standId = "none";
     public boolean active, equipped, hasStand, hasStyle;
     public float energy;
     public int selectedStand, selectedStyle;
@@ -25,6 +25,7 @@ public class HudStatePacket {
         stand = d.stand.displayName().getString();
         style = d.style.displayName().getString();
         styleId = d.style.id;
+        standId = d.stand.id;
         hasStand = d.stand != StandType.NONE;
         hasStyle = d.style != FightStyle.NONE;
         active = d.standActive;
@@ -45,7 +46,7 @@ public class HudStatePacket {
         }
     }
     public static void encode(HudStatePacket p, PacketBuffer b) {
-        b.writeString(p.stand); b.writeString(p.style); b.writeString(p.styleId);
+        b.writeString(p.stand); b.writeString(p.style); b.writeString(p.styleId); b.writeString(p.standId);
         b.writeBoolean(p.active); b.writeBoolean(p.equipped);
         b.writeBoolean(p.hasStand); b.writeBoolean(p.hasStyle);
         b.writeFloat(p.energy); b.writeVarInt(p.selectedStand); b.writeVarInt(p.selectedStyle);
@@ -57,6 +58,7 @@ public class HudStatePacket {
     public static HudStatePacket decode(PacketBuffer b) {
         HudStatePacket p = new HudStatePacket();
         p.stand = b.readString(128); p.style = b.readString(128); p.styleId = b.readString(32);
+        p.standId = b.readString(32);
         p.active = b.readBoolean(); p.equipped = b.readBoolean();
         p.hasStand = b.readBoolean(); p.hasStyle = b.readBoolean();
         p.energy = Math.max(0, Math.min(100, b.readFloat()));

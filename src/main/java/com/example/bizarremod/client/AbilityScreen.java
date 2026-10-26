@@ -49,7 +49,7 @@ public class AbilityScreen extends Screen {
         ClientHud.panel(m,left,top,panelWidth,230,ClientHud.GOLD);
         ClientHud.text(m,"BIZARRE / "+ClientHud.tr("abilities"),left+12,top+9,ClientHud.GOLD,panelWidth-24);
         HudStatePacket s=ClientHud.state;
-        String header=s==null?ClientHud.tr("waiting"):(style?s.style:s.stand)+" / "+ClientHud.tr("energy",Math.round(s.energy));
+        String header=s==null?ClientHud.tr("waiting"):(style?ClientHud.styleName():ClientHud.standName())+" / "+ClientHud.tr("energy",Math.round(s.energy));
         ClientHud.text(m,header,left+12,top+52,style?ClientHud.styleColor():ClientHud.PURPLE,panelWidth-24);
         super.render(m,mx,my,partial);
     }

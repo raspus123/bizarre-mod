@@ -28,7 +28,7 @@ public class HudEditorScreen extends Screen {
         if(super.mouseClicked(x,y,button))return true;
         HudLayout l=HudLayout.get(); double s=l.effectiveScale(width,height);
         int left=l.left(width,height),top=l.top(width,height);
-        if(button==0&&x>=left&&x<=left+236*s&&y>=top&&y<=top+124*s){
+        if(button==0&&x>=left&&x<=left+ClientHud.W*s&&y>=top&&y<=top+ClientHud.H*s){
             dragging=true;offsetX=x-left;offsetY=y-top;return true;
         }
         return false;

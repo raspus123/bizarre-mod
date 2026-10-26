@@ -1,3 +1,8 @@
+# Novità 1.3.0
+
+Leggi `AGGIORNAMENTO-1.3.0.md`: sfera d'acciaio lanciabile (Spin), HUD in stile Minecraft
+e skin degli Stand ridisegnate. Protocollo di rete 4: client e server devono avere la 1.3.0.
+
 # Novità 1.2.0
 
 Leggi `AGGIORNAMENTO-1.2.0.md` per GUI, HUD spostabile e sfere d’acciaio.
@@ -68,8 +73,8 @@ I danni indicati sono punti vita nominali prima di armatura, resistenze e altre 
 | Hamon | Scarlet Overdrive | 25 | 4 s | Bersaglio a 4,5 blocchi, 8 danni (14 ai non morti) e fuoco |
 | Hamon | Respirazione Hamon | 20 | 10 s | Cura 4 punti vita, rigenerazione 5 s, resistenza 3 s; solo Umani |
 | Hamon | Onda solare | 35 | 6 s | Cono a 6 blocchi, 6 danni, rallentamento e debolezza |
+| Spin | Lancio della sfera | 20 | 3 s | Lancia una vera sfera d'acciaio (proiettile rettilineo, 9 danni e rallentamento) |
 | Spin | Golden Spin | 30 | 3 s | Scatto rotante con 7 danni sui bersagli davanti e Wither |
-| Spin | Steel Ball | 20 | 3 s | Colpo istantaneo a 14 blocchi, 8 danni e rallentamento |
 | Spin | Vortice rotante | 30 | 6 s | Area a 4 blocchi, 6 danni, respinta e rallentamento |
 | Spin | Rotazione difensiva | 25 | 9 s | Resistenza II per 5 s e velocità per 3 s |
 | Pugilato | Jab combinati | 20 | 2 s | Quattro colpi da 2 danni a 3 blocchi, breve velocità |
@@ -77,8 +82,9 @@ I danni indicati sono punti vita nominali prima di armatura, resistenze e altre 
 | Pugilato | Montante | 25 | 3,5 s | 7 danni, sollevamento e rallentamento a 3 blocchi |
 | Pugilato | Guardia del pugile | 20 | 8 s | Resistenza II per 4 s, rallentamento per 2 s |
 
-La Steel Ball è una tecnica hitscan con particelle: non aggiunge un proiettile o un
-oggetto palla separato. Le tecniche rispettano visuale libera, squadre e PvP disabilitato.
+La sfera lanciata è un proiettile reale (entità `steel_ball`): vola in linea retta fino a 2 secondi
+e sparisce all'impatto; la Sfera d'acciaio che tieni in mano non si consuma. Le altre tecniche
+rispettano visuale libera, squadre e PvP disabilitato.
 Passiva Pugilato: +20% alla velocità mentre i guanti sono tenuti in mano;
 il modificatore viene rimosso al tick successivo quando li togli.
 Le abilità consumano energia, che si rigenera da sola. Hamon rigenera più energia al sole.

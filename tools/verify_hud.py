@@ -61,12 +61,22 @@ class HudChecks(unittest.TestCase):
             self.assertFalse({'gui.bizarremod.'+k for k in keys}-set(t))
     def test_layout_math_screen_bounds(self):
         # Mirror the explicit layout equations across resolutions and scales.
+        import re
+        m = re.search(r'public static final int W = (\d+), H = (\d+);', read('client/ClientHud.java'))
+        self.assertIsNotNone(m)
+        hud_w, hud_h = int(m.group(1)), int(m.group(2))
         for w,h in [(160,120),(320,240),(854,480),(1920,1080),(3440,1440)]:
             for scale in [0.6,1.0,1.5]:
-                s=min(scale,w/236,h/124)
+                s=min(scale,w/hud_w,h/hud_h)
                 for fraction in [0,0.02,0.62,1]:
-                    left=round(fraction*max(0,w-236*s));top=round(fraction*max(0,h-124*s))
+                    left=round(fraction*max(0,w-hud_w*s));top=round(fraction*max(0,h-hud_h*s))
                     self.assertGreaterEqual(left,0);self.assertGreaterEqual(top,0)
-                    self.assertLessEqual(left+236*s,w+0.51)
-                    self.assertLessEqual(top+124*s,h+0.51)
+                    self.assertLessEqual(left+hud_w*s,w+0.51)
+                    self.assertLessEqual(top+hud_h*s,h+0.51)
+    def test_hud_icons_exist_for_every_row(self):
+        import re
+        hud = read('client/ClientHud.java')
+        self.assertIn('"move_" + j', hud)
+        self.assertIn('(style ? "style_" : "stand_") + id', hud)
+        self.assertNotIn('JojoData.get', hud)
 if __name__=='__main__': unittest.main(verbosity=2)

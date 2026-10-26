@@ -44,10 +44,24 @@ con backup e Forge 1.16.5-36.2.39. Prima provare senza altre mod.
 - Dopo una tecnica, spammare C e cambiare B: ricariche individuali e gate 0,4 s rispettati.
 - Con energia insufficiente: nessuna azione. Colpi senza bersaglio: nessuna spesa.
 - La Respirazione Hamon deve funzionare solo per Umani, senza spesa sugli altri.
-- Steel Ball: testare a 14 blocchi, oltre il limite e dietro un muro.
+- Spin, Lancio della sfera: con la sfera in mano, tecnica 1 dello Spin. Deve partire un proiettile
+  visibile (sprite della sfera) che colpisce mostri e giocatori consentiti, sparisce contro un muro e
+  dopo circa 2 secondi, e NON consuma la sfera in mano. Senza sfera in mano non deve partire nulla.
+- Spin, Golden Spin: ora è la tecnica 2 (scatto con Wither); Vortice e Rotazione difensiva restano 3 e 4.
 - Alleati di squadra e giocatori con PvP disabilitato non devono essere danneggiati
   dalle nuove tecniche. Ripetere per le tecniche Hamon/Spin/Pugilato preesistenti.
 - Uscire e rientrare: stile e selezione preservati, Stand non attivo finché non si preme R.
+
+## 6. HUD in stile Minecraft e skin (1.3.0)
+- L'HUD mostra due righe (Stand, stile): casella con il ritratto/icona e 4 slot grigi come la hotbar.
+  La tecnica scelta ha la cornice bianca e sotto compare `[V] nome` (Stand) o `[C] nome` (stile) in azzurro.
+- Cambiare tecnica con G/B: la cornice bianca deve spostarsi e il nome cambiare.
+- Dopo l'uso di una tecnica: velo bianco di ricarica che scende nello slot e secondi al centro.
+- Con energia insufficiente o Stand non evocato: le icone devono apparire attenuate.
+- Barra verde dell'energia come la barra dell'esperienza; K sposta l'HUD, J apre la schermata abilità.
+- Su un server dedicato i nomi di Stand e stile devono comparire tradotti (non come `stand.bizarremod...`).
+- Skin: evocare ciascuno degli 11 Stand (`/jojo stand <id>`, tasto R) e controllare volto, capelli/cresta,
+  petto e fasce; il modello deve apparire con i colori dello Stand, senza texture viola/nera a quadri.
 
 ## In caso di errore
 Conservare versione Java/Forge, artifact log-compilazione per errori di build, oppure

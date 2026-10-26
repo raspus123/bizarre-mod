@@ -40,11 +40,11 @@ public class HudLayout {
         } catch (Exception e) { LogManager.getLogger("bizarremod").error("Cannot save HUD settings", e); }
     }
     public void reset() { x = 0.02; y = 0.62; scale = 1; visible = true; }
-    public double effectiveScale(int w, int h) { return Math.min(scale, Math.min((double)w / 236, (double)h / 124)); }
-    public int left(int w, int h) { return (int)Math.round(x * Math.max(0, w - 236 * effectiveScale(w, h))); }
-    public int top(int w, int h) { return (int)Math.round(y * Math.max(0, h - 124 * effectiveScale(w, h))); }
+    public double effectiveScale(int w, int h) { return Math.min(scale, Math.min((double)w / ClientHud.W, (double)h / ClientHud.H)); }
+    public int left(int w, int h) { return (int)Math.round(x * Math.max(0, w - ClientHud.W * effectiveScale(w, h))); }
+    public int top(int w, int h) { return (int)Math.round(y * Math.max(0, h - ClientHud.H * effectiveScale(w, h))); }
     public void position(double px, double py, int w, int h) {
         double s = effectiveScale(w, h);
-        x = px / Math.max(1, w - 236 * s); y = py / Math.max(1, h - 124 * s); clamp();
+        x = px / Math.max(1, w - ClientHud.W * s); y = py / Math.max(1, h - ClientHud.H * s); clamp();
     }
 }
