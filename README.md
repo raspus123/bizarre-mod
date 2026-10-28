@@ -1,3 +1,10 @@
+# Novità 1.4.0
+
+Leggi `AGGIORNAMENTO-1.4.0.md`: tutte le mosse dello Spin lanciano la sfera e la sfera ritorna da te,
+le mosse a distanza degli Stand sono proiettili, la prima mossa di ogni Stand è una raffica di pugni
+(con lo Stand che colpisce davvero a ondate) e nuove texture per freccia, pergamene, manuale,
+maschera di pietra e pietra rossa di Aja. Client e server devono avere la 1.4.0.
+
 # Novità 1.3.0
 
 Leggi `AGGIORNAMENTO-1.3.0.md`: sfera d'acciaio lanciabile (Spin), HUD in stile Minecraft
@@ -73,17 +80,17 @@ I danni indicati sono punti vita nominali prima di armatura, resistenze e altre 
 | Hamon | Scarlet Overdrive | 25 | 4 s | Bersaglio a 4,5 blocchi, 8 danni (14 ai non morti) e fuoco |
 | Hamon | Respirazione Hamon | 20 | 10 s | Cura 4 punti vita, rigenerazione 5 s, resistenza 3 s; solo Umani |
 | Hamon | Onda solare | 35 | 6 s | Cono a 6 blocchi, 6 danni, rallentamento e debolezza |
-| Spin | Lancio della sfera | 20 | 3 s | Lancia una vera sfera d'acciaio (proiettile rettilineo, 9 danni e rallentamento) |
-| Spin | Golden Spin | 30 | 3 s | Scatto rotante con 7 danni sui bersagli davanti e Wither |
-| Spin | Vortice rotante | 30 | 6 s | Area a 4 blocchi, 6 danni, respinta e rallentamento |
-| Spin | Rotazione difensiva | 25 | 9 s | Resistenza II per 5 s e velocità per 3 s |
+| Spin | Lancio della sfera | 20 | 3 s | Sfera lanciata in linea retta (9 danni, rallentamento): dopo l'impatto o la distanza massima TORNA da te e colpisce chi incontra (5 danni) |
+| Spin | Golden Spin | 30 | 3 s | Lancio rotante con Wither (7 danni) mentre ti lanci in avanti; la sfera ritorna da te |
+| Spin | Vortice rotante | 30 | 6 s | Due sfere girano intorno a te a 4 blocchi per 2,5 s (6 danni, rallentamento) e poi tornano |
+| Spin | Rotazione difensiva | 25 | 9 s | Tre sfere ti girano vicino per 4 s e colpiscono chi si avvicina (3 danni); Resistenza II e velocità |
 | Pugilato | Jab combinati | 20 | 2 s | Quattro colpi da 2 danni a 3 blocchi, breve velocità |
 | Pugilato | Gancio pesante | 30 | 4,5 s | 10 danni, forte respinta e debolezza a 3 blocchi |
 | Pugilato | Montante | 25 | 3,5 s | 7 danni, sollevamento e rallentamento a 3 blocchi |
 | Pugilato | Guardia del pugile | 20 | 8 s | Resistenza II per 4 s, rallentamento per 2 s |
 
-La sfera lanciata è un proiettile reale (entità `steel_ball`): vola in linea retta fino a 2 secondi
-e sparisce all'impatto; la Sfera d'acciaio che tieni in mano non si consuma. Le altre tecniche
+Le sfere sono proiettili reali (entità `steel_ball`) che tornano sempre da te: quando ti raggiungono
+fanno un suono e spariscono. La Sfera d'acciaio che tieni in mano non si consuma mai. Le altre tecniche
 rispettano visuale libera, squadre e PvP disabilitato.
 Passiva Pugilato: +20% alla velocità mentre i guanti sono tenuti in mano;
 il modificatore viene rimosso al tick successivo quando li togli.
@@ -109,14 +116,14 @@ una build riuscita, conserva `crash-reports/*.txt` e `logs/latest.log` insieme a
 versione Forge e all'elenco delle altre mod.
 
 ## Moveset degli Stand (ordine di selezione con G: raffica, poi le 3 abilita')
-- Star Platinum: ORA ORA | Star Finger (colpo a 12 blocchi) | Inala (trascina i nemici) | Time Stop 2s
-- The World: MUDA MUDA | Coltelli (a distanza, sanguinamento) | Road Roller (onda d'urto) | Time Stop 5s
+- Star Platinum: ORA ORA | Star Finger (proiettile veloce, ~20 blocchi) | Inala (trascina i nemici) | Time Stop 2s
+- The World: MUDA MUDA | Coltelli (5 coltelli a ventaglio, sanguinamento) | Road Roller (onda d'urto) | Time Stop 5s
 - Crazy Diamond: DORA DORA | Restore (cura, ripara) | Onda curativa (giocatori vicini) | Guardia (assorbimento)
-- Killer Queen: Kill Barrage | Bomba su entita' | Bomba su blocco | Sheer Heart Attack (3 mostri vicini)
+- Killer Queen: Kill Barrage | Bomba su entita' (moneta che esplode) | Bomba su blocco (esplode e rompe blocchi) | Sheer Heart Attack (3 bombe che inseguono i mostri)
 - Gold Experience: MUDA MUDA | Life Giver (piante + rigenerazione) | Dolore amplificato | Senso della vita (fa brillare i viventi)
-- Silver Chariot: stoccate a lungo raggio | Armor Off | Scatto con lo stocco | Parata
-- Magician's Red: pugni di fuoco | Crossfire Hurricane | Red Bind (cerchio di fuoco) | Muro di fuoco
-- Hierophant Green: Emerald Splash (raffica a distanza) | Tentacoli (trascina) | Rete di tentacoli (rallenta area) | Infiltrazione (veleno)
+- Silver Chariot: raffica di stoccate (6 blocchi) | Armor Off | Scatto con lo stocco | Parata
+- Magician's Red: pugni di fuoco | Crossfire Hurricane (3 palle di fuoco) | Red Bind (cerchio di fuoco) | Muro di fuoco
+- Hierophant Green: Raffica di pugni | Emerald Splash (10 smeraldi a ventaglio) | Tentacoli (trascina) | Rete di tentacoli (rallenta area)
 - King Crimson: Death Chop | Donut | Erase Time | Salto nel tempo (colpo alle spalle)
-- Sticky Fingers: ARI ARI | Zipper (teletrasporto) | Braccio zippato (indebolisce) | Onda zip (lancia in aria)
-- Stone Free: ORA ORA | Fili (immobilizza) | Ali di filo | Rampino di filo
+- Sticky Fingers: ARI ARI | Zipper (teletrasporto) | Braccio zippato (proiettile, indebolisce) | Onda zip (lancia in aria)
+- Stone Free: ORA ORA | Fili (proiettile, immobilizza) | Ali di filo | Rampino di filo

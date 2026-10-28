@@ -108,4 +108,12 @@ public class ModItems {
         p.sendStatusMessage(new TranslationTextComponent("message.bizarremod.race_changed", d.race.displayName()), false);
         return true;
     }
+
+    // Sprite dei proiettili degli Stand: non compaiono nel creativo e non hanno ricette.
+    public static final RegistryObject<Item> PROJECTILE_KNIFE = ITEMS.register("projectile_knife",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> PROJECTILE_STAR = ITEMS.register("projectile_star",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> PROJECTILE_ZIP = ITEMS.register("projectile_zip",
+            () -> new Item(new Item.Properties()));
 }

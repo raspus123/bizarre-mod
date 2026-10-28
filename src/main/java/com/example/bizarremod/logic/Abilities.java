@@ -5,6 +5,7 @@ import com.example.bizarremod.data.JojoData;
 import com.example.bizarremod.data.Race;
 import com.example.bizarremod.data.StandType;
 import com.example.bizarremod.entity.StandEntity;
+import com.example.bizarremod.entity.StandShotEntity;
 import com.example.bizarremod.entity.SteelBallEntity;
 import com.example.bizarremod.registry.ModEntities;
 import com.example.bizarremod.registry.ModItems;
@@ -12,9 +13,11 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.CreatureAttribute;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.PlayerEntity;
@@ -147,14 +150,13 @@ public final class Abilities {
     static {
         MOVES.put(StandType.STAR_PLATINUM, new Move[] {
             m("Raffica ORA", 25, 40, p -> barrage(p, 4.5, 7, 3.0F, "ORA ORA ORA ORA ORA!", 0)),
-            m("Star Finger", 30, 120, p -> ranged(p, 12, 10F, 0.4, ParticleTypes.END_ROD, "STAR FINGER!")),
+            m("Star Finger", 30, 120, p -> starFinger(p)),
             m("Inala", 35, 200, p -> inhale(p)),
             m("Time Stop", 50, 400, p -> timeStop(p, 40, "STAR PLATINUM: THE WORLD!"))
         });
         MOVES.put(StandType.THE_WORLD, new Move[] {
             m("Raffica MUDA", 25, 40, p -> barrage(p, 4.5, 8, 3.5F, "MUDA MUDA MUDA MUDA!", 0)),
-            m("Coltelli", 30, 100, p -> ranged(p, 20, 8F, 0.3, ParticleTypes.CRIT, "THE WORLD: COLTELLI!",
-                    fx(Effects.WITHER, 40, 0))),
+            m("Coltelli", 30, 100, p -> throwKnives(p)),
             m("Road Roller", 45, 250, p -> blast(p, 5, 12F, 1.5, 0, ParticleTypes.POOF, 60,
                     "ROAD ROLLER DA!", true, fx(Effects.SLOWNESS, 60, 2))),
             m("Time Stop", 70, 700, p -> timeStop(p, 100, "ZA WARUDO! TOKI WO TOMARE!"))
@@ -168,8 +170,8 @@ public final class Abilities {
         });
         MOVES.put(StandType.KILLER_QUEEN, new Move[] {
             m("Kill Barrage", 25, 40, p -> barrage(p, 4.5, 5, 3.0F, "KILLER QUEEN: KILL BARRAGE!", 0)),
-            m("Bomba su entità", 25, 100, p -> bombEntity(p)),
-            m("Bomba su blocco", 45, 200, p -> bombBlock(p)),
+            m("Bomba su entità", 25, 100, p -> bombCoin(p, 3.0F, Explosion.Mode.NONE, "KILLER QUEEN: PRIMA BOMBA!")),
+            m("Bomba su blocco", 45, 200, p -> bombCoin(p, 3.5F, Explosion.Mode.BREAK, "KILLER QUEEN: BOMBA!")),
             m("Sheer Heart Attack", 60, 500, p -> sheerHeartAttack(p))
         });
         MOVES.put(StandType.GOLD_EXPERIENCE, new Move[] {
@@ -195,13 +197,11 @@ public final class Abilities {
             m("Muro di fuoco", 40, 250, p -> fireWall(p))
         });
         MOVES.put(StandType.HIEROPHANT_GREEN, new Move[] {
-            m("Emerald Splash", 25, 40, p -> rangedBarrage(p, 25, 5, 2.5F, "HIEROPHANT GREEN: EMERALD SPLASH!",
-                    ParticleTypes.HAPPY_VILLAGER)),
-            m("Tentacoli", 35, 200, p -> pullTarget(p)),
+            m("Raffica di pugni", 25, 40, p -> barrage(p, 4.5, 6, 2.5F, "HIEROPHANT GREEN: RAFFICA DI PUGNI!", 0)),
+            m("Emerald Splash", 30, 80, p -> emeraldSplash(p)),
+            m("Tentacoli", 35, 200, p -> tentacle(p)),
             m("Rete di tentacoli", 40, 300, p -> blast(p, 8, 3F, 0.0, 0, ParticleTypes.HAPPY_VILLAGER, 80,
-                    "HIEROPHANT GREEN: RETE DI TENTACOLI!", true, fx(Effects.SLOWNESS, 120, 4))),
-            m("Infiltrazione", 35, 250, p -> ranged(p, 15, 5F, 0.0, ParticleTypes.HAPPY_VILLAGER,
-                    "HIEROPHANT GREEN: INFILTRAZIONE!", fx(Effects.POISON, 200, 1), fx(Effects.NAUSEA, 200, 0)))
+                    "HIEROPHANT GREEN: RETE DI TENTACOLI!", true, fx(Effects.SLOWNESS, 120, 4)))
         });
         MOVES.put(StandType.KING_CRIMSON, new Move[] {
             m("Death Chop", 25, 40, p -> barrage(p, 4.5, 5, 3.5F, "KING CRIMSON: DEATH CHOP!", 0)),
@@ -212,15 +212,13 @@ public final class Abilities {
         MOVES.put(StandType.STICKY_FINGERS, new Move[] {
             m("Raffica ARI", 25, 40, p -> barrage(p, 4.5, 6, 2.8F, "ARI ARI ARI ARI ARRIVEDERCI!", 0)),
             m("Zipper", 35, 200, p -> zipperEscape(p)),
-            m("Braccio zippato", 30, 160, p -> ranged(p, 10, 8F, 0.0, ParticleTypes.CLOUD,
-                    "STICKY FINGERS: BRACCIO ZIPPATO!", fx(Effects.WEAKNESS, 200, 2), fx(Effects.SLOWNESS, 100, 1))),
+            m("Braccio zippato", 30, 160, p -> zipArm(p)),
             m("Onda zip", 40, 250, p -> blast(p, 4, 7F, 0.0, 0.7, ParticleTypes.CLOUD, 40,
                     "STICKY FINGERS: ONDA ZIP!", true))
         });
         MOVES.put(StandType.STONE_FREE, new Move[] {
             m("Raffica ORA", 25, 40, p -> barrage(p, 4.5, 6, 2.5F, "STONE FREE: ORA ORA ORA!", 0)),
-            m("Fili", 30, 160, p -> ranged(p, 12, 4F, 0.0, ParticleTypes.CRIT, "STONE FREE: FILI!",
-                    fx(Effects.SLOWNESS, 100, 5), fx(Effects.WEAKNESS, 100, 1))),
+            m("Fili", 30, 160, p -> threads(p)),
             m("Ali di filo", 30, 300, p -> buff(p, "STONE FREE: ALI DI FILO!", SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP,
                     fx(Effects.SLOW_FALLING, 300, 0), fx(Effects.JUMP_BOOST, 300, 3), fx(Effects.SPEED, 300, 1))),
             m("Rampino di filo", 20, 100, p -> grapple(p))
@@ -229,20 +227,37 @@ public final class Abilities {
 
     // ---------------------------------------------------------- mosse generiche
 
-    /** Raffica di colpi davanti a te. fireSeconds > 0 da' fuoco ai bersagli. */
-    private static boolean barrage(ServerPlayerEntity p, double range, int hits, float dmg, String shout, int fireSeconds) {
-        List<LivingEntity> targets = targetsInFront(p, range);
-        if (targets.isEmpty()) { msg(p, "message.bizarremod.no_target"); return false; }
-        for (LivingEntity t : targets) {
-            for (int i = 0; i < hits; i++) {
-                hit(p, t, dmg, i == hits - 1 ? 0.8 : 0.0);
-            }
-            if (fireSeconds > 0) t.setFire(fireSeconds);
-            particles(p, ParticleTypes.CRIT, t.getPosX(), t.getPosYHeight(0.5), t.getPosZ(), 25, 0.4, 0.4, 0.4, 0.2);
+    /**
+     * Raffica di pugni: lo Stand sferra "pulses" ondate, una ogni 2 tick, muovendo il braccio a ogni ondata.
+     * Se la mossa parte senza nessuno davanti non consuma energia.
+     */
+    private static boolean barrage(ServerPlayerEntity p, double range, int pulses, float dmg, String shout, int fireSeconds) {
+        if (styleFront(p, range).isEmpty()) { msg(p, "message.bizarremod.no_target"); return false; }
+        StandEntity stand = activeStand(p);
+        if (stand == null) {                       // nessuna entita' Stand trovata: tutti i colpi subito
+            for (int i = 0; i < pulses; i++) barragePulse(p, range, dmg, fireSeconds, i == pulses - 1);
+        } else {
+            stand.startBarrage(pulses, range, dmg, fireSeconds);
         }
         say(p, shout);
-        sound(p, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG);
         return true;
+    }
+
+    /** Un'ondata della raffica: colpisce chi e' davanti. Chiamata dallo Stand ogni 2 tick. */
+    public static void barragePulse(ServerPlayerEntity p, double range, float dmg, int fireSeconds, boolean last) {
+        for (LivingEntity t : styleFront(p, range)) {
+            hit(p, t, dmg, last ? 0.8 : 0.0);
+            if (fireSeconds > 0) t.setFire(fireSeconds);
+            particles(p, ParticleTypes.CRIT, t.getPosX(), t.getPosYHeight(0.5), t.getPosZ(), 6, 0.3, 0.3, 0.3, 0.15);
+        }
+        sound(p, last ? SoundEvents.ENTITY_PLAYER_ATTACK_STRONG : SoundEvents.ENTITY_PLAYER_ATTACK_WEAK);
+    }
+
+    private static StandEntity activeStand(ServerPlayerEntity p) {
+        JojoData d = JojoData.get(p);
+        if (d.activeStandId == null) return null;
+        Entity e = p.getServerWorld().getEntityByUuid(d.activeStandId);
+        return e instanceof StandEntity ? (StandEntity) e : null;
     }
 
     /** Colpo singolo a distanza sull'entita' che guardi, con effetti opzionali. */
@@ -364,36 +379,31 @@ public final class Abilities {
 
     // ---------------------------------------------------------- Killer Queen
 
-    // Bomba sull'entita' che guardi (senza distruggere blocchi)
-    private static boolean bombEntity(ServerPlayerEntity p) {
-        LivingEntity t = lookedAt(p, 25);
-        if (t == null) { msg(p, "message.bizarremod.no_target"); return false; }
-        p.getServerWorld().createExplosion(p, t.getPosX(), t.getPosYHeight(0.5), t.getPosZ(), 3.0F, Explosion.Mode.NONE);
-        say(p, "KILLER QUEEN: PRIMA BOMBA!");
-        return true;
+    // Killer Queen: moneta-bomba lanciata, esplode all'impatto (senza distruggere blocchi o, con BREAK, distruggendoli)
+    private static boolean bombCoin(ServerPlayerEntity p, final float power, final Explosion.Mode mode, String shout) {
+        return shoot(p, new ItemStack(Items.GOLD_NUGGET), 1, 0, 2.0, 14, ParticleTypes.SMOKE, shout,
+                shot -> shot.damage(0f, 0.0).explosion(power, mode));
     }
 
-    // Bomba sul blocco che guardi (distrugge blocchi!)
-    private static boolean bombBlock(ServerPlayerEntity p) {
-        RayTraceResult hr = p.pick(30.0D, 1.0F, false);
-        if (hr.getType() != RayTraceResult.Type.BLOCK) { msg(p, "message.bizarremod.no_target"); return false; }
-        Vector3d v = hr.getHitVec();
-        p.getServerWorld().createExplosion(p, v.x, v.y, v.z, 3.5F, Explosion.Mode.BREAK);
-        say(p, "KILLER QUEEN: BOMBA!");
-        return true;
-    }
 
-    // Sheer Heart Attack: bombe automatiche sui 3 mostri ostili piu' vicini
+    // Killer Queen: Sheer Heart Attack, tre bombe che inseguono i mostri ostili piu' vicini
     private static boolean sheerHeartAttack(final ServerPlayerEntity p) {
         List<LivingEntity> foes = p.world.getEntitiesWithinAABB(LivingEntity.class, p.getBoundingBox().grow(25),
                 e -> e instanceof IMob && e.isAlive() && e != p);
         if (foes.isEmpty()) { msg(p, "message.bizarremod.no_target"); return false; }
         foes.sort(Comparator.comparingDouble((LivingEntity e) -> e.getDistanceSq(p)));
         int count = Math.min(3, foes.size());
+        int launched = 0;
         for (int i = 0; i < count; i++) {
-            LivingEntity t = foes.get(i);
-            p.getServerWorld().createExplosion(p, t.getPosX(), t.getPosYHeight(0.5), t.getPosZ(), 2.0F, Explosion.Mode.NONE);
+            LivingEntity target = foes.get(i);
+            StandShotEntity shot = new StandShotEntity(p.world, p, new ItemStack(Items.FIREWORK_STAR));
+            shot.setPosition(p.getPosX(), p.getPosYEye(), p.getPosZ());
+            shot.setMotion(p.getRNG().nextGaussian() * 0.3, 0.6, p.getRNG().nextGaussian() * 0.3);
+            shot.damage(0f, 0.0).explosion(2.0F, Explosion.Mode.NONE).homing(target.getUniqueID())
+                    .lifetime(45).trail(ParticleTypes.SMOKE);
+            if (p.getServerWorld().addEntity(shot)) launched++;
         }
+        if (launched == 0) { msg(p, "message.bizarremod.summon_failed"); return false; }
         say(p, "KILLER QUEEN: SHEER HEART ATTACK!");
         return true;
     }
@@ -440,15 +450,10 @@ public final class Abilities {
 
     // ---------------------------------------------------------- Magician's Red
 
-    // Crossfire Hurricane: colpisce a distanza e da' fuoco
+    // Magician's Red: Crossfire Hurricane, tre palle di fuoco a ventaglio
     private static boolean crossfire(ServerPlayerEntity p) {
-        LivingEntity t = lookedAt(p, 20);
-        if (t == null) { msg(p, "message.bizarremod.no_target"); return false; }
-        hit(p, t, 6f, 0.6);
-        t.setFire(8);
-        beam(p, new Vector3d(t.getPosX(), t.getPosYHeight(0.5), t.getPosZ()), ParticleTypes.FLAME);
-        say(p, "MAGICIAN'S RED: CROSSFIRE HURRICANE!");
-        return true;
+        return shoot(p, new ItemStack(Items.FIRE_CHARGE), 3, 16, 1.8, 12, ParticleTypes.FLAME,
+                "MAGICIAN'S RED: CROSSFIRE HURRICANE!", shot -> shot.damage(4f, 0.4).fire(6));
     }
 
     // Red Bind: cerchio di fuoco intorno a te (tu sei immune al fuoco)
@@ -489,18 +494,17 @@ public final class Abilities {
 
     // ---------------------------------------------------------- Hierophant Green
 
-    // I tentacoli trascinano il bersaglio verso di te
-    private static boolean pullTarget(ServerPlayerEntity p) {
-        LivingEntity t = lookedAt(p, 20);
-        if (t == null) { msg(p, "message.bizarremod.no_target"); return false; }
-        Vector3d v = p.getPositionVec().subtract(t.getPositionVec()).normalize().scale(1.5);
-        hit(p, t, 4f, 0.0);
-        t.setMotion(v.x, 0.4, v.z);
-        t.velocityChanged = true;
-        give(t, fx(Effects.SLOWNESS, 100, 2));
-        beam(p, new Vector3d(t.getPosX(), t.getPosYHeight(0.5), t.getPosZ()), ParticleTypes.HAPPY_VILLAGER);
-        say(p, "HIEROPHANT GREEN: TENTACOLI!");
-        return true;
+    // Hierophant Green: Emerald Splash, una raffica di smeraldi a ventaglio
+    private static boolean emeraldSplash(ServerPlayerEntity p) {
+        return shoot(p, new ItemStack(Items.EMERALD), 10, 20, 2.4, 10, ParticleTypes.HAPPY_VILLAGER,
+                "HIEROPHANT GREEN: EMERALD SPLASH!", shot -> shot.damage(2.4f, 0.2));
+    }
+
+    // Hierophant Green: un tentacolo che aggancia il bersaglio e lo trascina verso di te
+    private static boolean tentacle(ServerPlayerEntity p) {
+        return shoot(p, new ItemStack(Items.VINE), 1, 0, 2.0, 11, ParticleTypes.HAPPY_VILLAGER,
+                "HIEROPHANT GREEN: TENTACOLI!",
+                shot -> shot.damage(4f, 0.0).pull().effect(new EffectInstance(Effects.SLOWNESS, 100, 2)));
     }
 
     // ---------------------------------------------------------- King Crimson
@@ -703,53 +707,81 @@ public final class Abilities {
         return true;
     }
 
-    /**
-     * Lancia una vera sfera d'acciaio (proiettile rettilineo a 2,4 blocchi/tick).
-     * La sfera in mano non viene consumata: quella lanciata sparisce all'impatto o dopo 2 secondi.
-     */
+    /** Spin 1: lancio rettilineo della sfera; dopo l'impatto o la distanza massima torna da te. */
     private static boolean throwSteelBall(ServerPlayerEntity p) {
-        SteelBallEntity ball = new SteelBallEntity(p.world, p);
-        Vector3d look = p.getLookVec();
-        ball.setPosition(p.getPosX() + look.x * 0.6, p.getPosYEye() - 0.15 + look.y * 0.6, p.getPosZ() + look.z * 0.6);
-        ball.setMotion(look.scale(2.4));
-        if (!p.getServerWorld().addEntity(ball)) {
-            msg(p, "message.bizarremod.summon_failed");
-            return false;
-        }
-        particles(p, ParticleTypes.CRIT, p.getPosX() + look.x, p.getPosYEye() + look.y * 0.5, p.getPosZ() + look.z,
-                8, 0.1, 0.1, 0.1, 0.05);
-        sound(p, SoundEvents.ENTITY_SNOWBALL_THROW);
+        SteelBallEntity ball = new SteelBallEntity(p.world, p).straight(9f, 5f, 9).effects(60, 0);
+        if (!launchBall(p, ball, 2.4)) return false;
         say(p, "STEEL BALL!");
         return true;
     }
 
-    /** Effetto dell'impatto della sfera: richiamato dal proiettile, sempre lato server. */
-    public static void steelBallHit(ServerPlayerEntity owner, LivingEntity target) {
-        if (!target.isAlive() || target == owner || target instanceof StandEntity
-                || target.isSpectator() || target.isOnSameTeam(owner)) return;
-        if (target instanceof PlayerEntity && !owner.canAttackPlayer((PlayerEntity) target)) return;
-        hit(owner, target, 9f, 0.6);
-        give(target, fx(Effects.SLOWNESS, 60, 1));
-        particles(owner, ParticleTypes.CRIT, target.getPosX(), target.getPosYHeight(0.5), target.getPosZ(),
-                16, 0.3, 0.4, 0.3, 0.2);
-        sound(owner, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT);
-    }
-
-    private static boolean spinVortex(ServerPlayerEntity p) {
-        List<LivingEntity> targets = around(p, 4);
-        targets.removeIf(target -> !validStyleTarget(p, target) || p.getDistanceSq(target) > 16);
-        if (targets.isEmpty()) { msg(p, "message.bizarremod.no_target"); return false; }
-        for (LivingEntity target : targets) {
-            hit(p, target, 6f, 1.2);
-            give(target, fx(Effects.SLOWNESS, 60, 1));
+    /** Mette la sfera davanti al giocatore e la lancia. La sfera in mano non viene consumata. */
+    private static boolean launchBall(ServerPlayerEntity p, SteelBallEntity ball, double speed) {
+        Vector3d look = p.getLookVec();
+        ball.setPosition(p.getPosX() + look.x * 0.6, p.getPosYEye() - 0.15 + look.y * 0.6, p.getPosZ() + look.z * 0.6);
+        ball.setMotion(look.scale(speed));
+        if (!p.getServerWorld().addEntity(ball)) {
+            msg(p, "message.bizarremod.summon_failed");
+            return false;
         }
-        particles(p, ParticleTypes.SWEEP_ATTACK, p.getPosX(), p.getPosYHeight(0.5), p.getPosZ(), 18, 2, 0.4, 2, 0);
+        sound(p, SoundEvents.ENTITY_SNOWBALL_THROW);
         return true;
     }
 
+    /** Fa girare una o piu' sfere intorno al giocatore: tornano da te al termine. */
+    private static boolean orbitBalls(ServerPlayerEntity p, int count, double radius, int ticks, float damage,
+                                      int slowness, int wither) {
+        int launched = 0;
+        for (int i = 0; i < count; i++) {
+            SteelBallEntity ball = new SteelBallEntity(p.world, p)
+                    .orbit(radius, i * (2 * Math.PI / count), ticks, damage).effects(slowness, wither);
+            ball.setPosition(p.getPosX(), p.getPosYEye(), p.getPosZ());
+            if (p.getServerWorld().addEntity(ball)) launched++;
+        }
+        if (launched == 0) {
+            msg(p, "message.bizarremod.summon_failed");
+            return false;
+        }
+        sound(p, SoundEvents.ENTITY_SNOWBALL_THROW);
+        return true;
+    }
+
+    /**
+     * Colpo di un proiettile (sfera d'acciaio o colpo di uno Stand), sempre lato server: controlla il bersaglio
+     * (vivo, non alleato, PvP consentito) e applica danno, spinta, fuoco, effetti e l'eventuale trascinamento.
+     */
+    public static boolean projectileHit(ServerPlayerEntity owner, LivingEntity target, float dmg, double kb,
+                                        int fireSeconds, boolean pull, List<EffectInstance> effects) {
+        if (!target.isAlive() || target == owner || target instanceof StandEntity
+                || target.isSpectator() || target.isOnSameTeam(owner)) return false;
+        if (target instanceof PlayerEntity && !owner.canAttackPlayer((PlayerEntity) target)) return false;
+        if (dmg > 0) hit(owner, target, dmg, kb);
+        if (fireSeconds > 0) target.setFire(fireSeconds);
+        for (EffectInstance effect : effects) target.addPotionEffect(new EffectInstance(effect));
+        if (pull) {
+            Vector3d v = owner.getPositionVec().subtract(target.getPositionVec()).normalize().scale(1.5);
+            target.setMotion(v.x, 0.4, v.z);
+            target.velocityChanged = true;
+        }
+        particles(owner, ParticleTypes.CRIT, target.getPosX(), target.getPosYHeight(0.5), target.getPosZ(),
+                12, 0.3, 0.4, 0.3, 0.15);
+        return true;
+    }
+
+    // Spin 3, Vortice rotante: due sfere girano intorno a te a 4 blocchi e poi tornano
+    private static boolean spinVortex(ServerPlayerEntity p) {
+        if (!orbitBalls(p, 2, 4.0, 50, 6f, 60, 0)) return false;
+        particles(p, ParticleTypes.SWEEP_ATTACK, p.getPosX(), p.getPosYHeight(0.5), p.getPosZ(), 18, 2, 0.4, 2, 0);
+        say(p, "VORTICE ROTANTE!");
+        return true;
+    }
+
+    // Spin 4, Rotazione difensiva: tre sfere ti girano vicino (colpiscono chi si avvicina) e ti proteggono
     private static boolean spinGuard(ServerPlayerEntity p) {
+        if (!orbitBalls(p, 3, 1.8, 80, 3f, 0, 0)) return false;
         give(p, fx(Effects.RESISTANCE, 100, 1), fx(Effects.SPEED, 60, 0));
         particles(p, ParticleTypes.CRIT, p.getPosX(), p.getPosYHeight(0.5), p.getPosZ(), 25, 0.7, 0.7, 0.7, 0.03);
+        say(p, "ROTAZIONE DIFENSIVA!");
         return true;
     }
 
@@ -822,17 +854,14 @@ public final class Abilities {
         return true;
     }
 
-    // Spin: scatto rotante che ferisce e fa sanguinare
+    // Spin 2, Golden Spin: lancio rotante della sfera (con Wither) mentre ti lanci in avanti
     private static boolean spin(ServerPlayerEntity p) {
-        List<LivingEntity> targets = styleFront(p, 4);
+        SteelBallEntity ball = new SteelBallEntity(p.world, p).straight(7f, 4f, 7).effects(0, 60);
+        if (!launchBall(p, ball, 1.9)) return false;
         Vector3d look = p.getLookVec();
-        p.setMotion(look.x * 1.6, Math.max(0.25, look.y * 0.8), look.z * 1.6);
+        p.setMotion(look.x * 1.4, Math.max(0.25, look.y * 0.7), look.z * 1.4);
         p.velocityChanged = true;
         p.fallDistance = 0;
-        for (LivingEntity t : targets) {
-            hit(p, t, 7f, 0.9);
-            give(t, fx(Effects.WITHER, 60, 0));
-        }
         particles(p, ParticleTypes.SWEEP_ATTACK, p.getPosX(), p.getPosYHeight(0.5), p.getPosZ(), 5, 0.5, 0.3, 0.5, 0.0);
         say(p, "GOLDEN SPIN!");
         return true;
@@ -859,7 +888,7 @@ public final class Abilities {
         boolean ok = false;
         switch (d.race) {
             case HUMAN: ok = humanSpirit(p); break;
-            case VAMPIRE: ok = ranged(p, 15, 12F, 0.5, ParticleTypes.END_ROD, "SPACE RIPPER STINGY EYES!"); break;
+            case VAMPIRE: ok = stingyEyes(p); break;
             case PILLAR_MAN: ok = blast(p, 6, 10F, 1.2, 0, ParticleTypes.CLOUD, 80, "DIVINE SANDSTORM!", true,
                     fx(Effects.BLINDNESS, 80, 0)); break;
             default: break;
@@ -878,6 +907,68 @@ public final class Abilities {
     }
 
     // ================================================================== UTILITA'
+
+    /**
+     * Genera uno o piu' proiettili (a ventaglio) davanti al giocatore. "setup" configura ogni proiettile:
+     * danno, effetti, fuoco, esplosione, inseguimento.
+     */
+    private static boolean shoot(ServerPlayerEntity p, ItemStack icon, int count, double fanDegrees, double speed,
+                                 int lifetime, IParticleData trail, String shout, Consumer<StandShotEntity> setup) {
+        Vector3d look = p.getLookVec();
+        boolean any = false;
+        for (int i = 0; i < count; i++) {
+            double offset = count == 1 ? 0.0 : (i - (count - 1) / 2.0) * (fanDegrees / (count - 1));
+            Vector3d dir = look.rotateYaw((float) Math.toRadians(offset))
+                    .rotateYaw((float) (p.getRNG().nextGaussian() * 0.02))
+                    .rotatePitch((float) (p.getRNG().nextGaussian() * 0.02));
+            StandShotEntity shot = new StandShotEntity(p.world, p, icon.copy());
+            shot.setPosition(p.getPosX() + dir.x * 0.8, p.getPosYEye() - 0.2 + dir.y * 0.8, p.getPosZ() + dir.z * 0.8);
+            shot.setMotion(dir.scale(speed));
+            shot.lifetime(lifetime).trail(trail);
+            setup.accept(shot);
+            if (p.getServerWorld().addEntity(shot)) any = true;
+        }
+        if (!any) {
+            msg(p, "message.bizarremod.summon_failed");
+            return false;
+        }
+        say(p, shout);
+        sound(p, SoundEvents.ENTITY_SNOWBALL_THROW);
+        return true;
+    }
+
+    // Star Platinum: Star Finger, il dito parte come un proiettile velocissimo
+    private static boolean starFinger(ServerPlayerEntity p) {
+        return shoot(p, new ItemStack(ModItems.PROJECTILE_STAR.get()), 1, 0, 2.2, 9, ParticleTypes.END_ROD,
+                "STAR FINGER!", shot -> shot.damage(10f, 0.4));
+    }
+
+    // The World: cinque coltelli a ventaglio con sanguinamento
+    private static boolean throwKnives(ServerPlayerEntity p) {
+        return shoot(p, new ItemStack(ModItems.PROJECTILE_KNIFE.get()), 5, 26, 2.2, 10, ParticleTypes.CRIT,
+                "THE WORLD: COLTELLI!", shot -> shot.damage(3.5f, 0.2).effect(new EffectInstance(Effects.WITHER, 40, 0)));
+    }
+
+    // Vampiro: Space Ripper Stingy Eyes, due getti ad alta pressione che partono dagli occhi
+    private static boolean stingyEyes(ServerPlayerEntity p) {
+        return shoot(p, new ItemStack(Items.PRISMARINE_SHARD), 2, 5, 3.0, 6, ParticleTypes.END_ROD,
+                "SPACE RIPPER STINGY EYES!", shot -> shot.damage(6f, 0.3));
+    }
+
+    // Sticky Fingers: il braccio zippato parte come un proiettile e indebolisce chi colpisce
+    private static boolean zipArm(ServerPlayerEntity p) {
+        return shoot(p, new ItemStack(ModItems.PROJECTILE_ZIP.get()), 1, 0, 2.0, 9, ParticleTypes.CLOUD,
+                "STICKY FINGERS: BRACCIO ZIPPATO!",
+                shot -> shot.damage(6f, 0.0).effect(new EffectInstance(Effects.WEAKNESS, 200, 2))
+                        .effect(new EffectInstance(Effects.SLOWNESS, 100, 1)));
+    }
+
+    // Stone Free: un filo che immobilizza e indebolisce chi colpisce
+    private static boolean threads(ServerPlayerEntity p) {
+        return shoot(p, new ItemStack(Items.STRING), 1, 0, 2.2, 10, ParticleTypes.CRIT, "STONE FREE: FILI!",
+                shot -> shot.damage(4f, 0.0).effect(new EffectInstance(Effects.SLOWNESS, 100, 5))
+                        .effect(new EffectInstance(Effects.WEAKNESS, 100, 1)));
+    }
 
     private static void msg(ServerPlayerEntity p, String key) {
         p.sendStatusMessage(new TranslationTextComponent(key), true);

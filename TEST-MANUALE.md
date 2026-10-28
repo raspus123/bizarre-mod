@@ -44,13 +44,29 @@ con backup e Forge 1.16.5-36.2.39. Prima provare senza altre mod.
 - Dopo una tecnica, spammare C e cambiare B: ricariche individuali e gate 0,4 s rispettati.
 - Con energia insufficiente: nessuna azione. Colpi senza bersaglio: nessuna spesa.
 - La Respirazione Hamon deve funzionare solo per Umani, senza spesa sugli altri.
-- Spin, Lancio della sfera: con la sfera in mano, tecnica 1 dello Spin. Deve partire un proiettile
-  visibile (sprite della sfera) che colpisce mostri e giocatori consentiti, sparisce contro un muro e
-  dopo circa 2 secondi, e NON consuma la sfera in mano. Senza sfera in mano non deve partire nulla.
-- Spin, Golden Spin: ora è la tecnica 2 (scatto con Wither); Vortice e Rotazione difensiva restano 3 e 4.
+- Spin, Lancio della sfera: con la sfera in mano, tecnica 1 dello Spin. Deve partire una sfera visibile
+  (sprite metallico) che vola dritta, colpisce chi incontra e poi TORNA verso di te passando anche
+  attraverso i blocchi; quando ti raggiunge fa un suono e sparisce. Non deve mai consumare la sfera in mano.
+  Senza sfera in mano non deve partire nulla.
+- Spin, Golden Spin (tecnica 2): lancio con Wither e scatto in avanti; la sfera deve ritornare.
+- Spin, Vortice rotante (3): due sfere girano a 4 blocchi per circa 2,5 s, poi tornano. Rotazione difensiva (4):
+  tre sfere girano vicino per 4 s, poi tornano. Fluidità: il movimento non deve scattare (aggiornamento a ogni tick).
+- Se il giocatore muore o esce mentre le sfere sono in volo, le sfere devono sparire.
 - Alleati di squadra e giocatori con PvP disabilitato non devono essere danneggiati
   dalle nuove tecniche. Ripetere per le tecniche Hamon/Spin/Pugilato preesistenti.
 - Uscire e rientrare: stile e selezione preservati, Stand non attivo finché non si preme R.
+
+## 7. Raffica, proiettili e oggetti (1.4.0)
+- Prima mossa di OGNI Stand: raffica di pugni. Lo Stand muove il braccio a ondate (una ogni 2 tick), i danni
+  arrivano nel tempo e non tutti insieme; senza nessuno davanti non parte e non consuma energia.
+  Hierophant Green: la prima mossa è "Raffica di pugni" (Emerald Splash è ora la seconda).
+- Mosse a distanza come PROIETTILI visibili: Star Finger, Coltelli, Crossfire Hurricane, Emerald Splash,
+  Tentacoli (trascina il bersaglio), monete di Killer Queen (esplodono all'impatto), Sheer Heart Attack
+  (bombe che inseguono i mostri), Braccio zippato, Fili, occhi del Vampiro. Devono colpire solo bersagli
+  validi (non alleati, non il proprio Stand, PvP rispettato).
+- Texture 16x16 nuove: Freccia dello Stand, Pergamene Hamon/Spin, Manuale di Pugilato, Maschera di Pietra,
+  Pietra Rossa di Aja, Sfera d'acciaio; controllarle in inventario, in mano e a terra.
+- Gli sprite nascosti (coltello, stella, cerniera) non devono comparire nel creativo né avere ricette.
 
 ## 6. HUD in stile Minecraft e skin (1.3.0)
 - L'HUD mostra due righe (Stand, stile): casella con il ritratto/icona e 4 slot grigi come la hotbar.
