@@ -140,8 +140,8 @@ class ProjectChecks(unittest.TestCase):
         self.assertIn('targets.removeIf(target -> !validStyleTarget(p, target))', abilities)
 
     def test_release_version(self):
-        self.assertIn("version = '1.4.0'", (ROOT/'build.gradle').read_text(encoding='utf-8'))
-        self.assertIn('version="1.4.0"', (RESOURCES/'META-INF/mods.toml').read_text(encoding='utf-8'))
+        self.assertIn("version = '1.5.0'", (ROOT/'build.gradle').read_text(encoding='utf-8'))
+        self.assertIn('version="1.5.0"', (RESOURCES/'META-INF/mods.toml').read_text(encoding='utf-8'))
 
     def test_steel_ball_is_a_real_projectile(self):
         abilities = read('logic/Abilities.java')
@@ -166,8 +166,8 @@ class ProjectChecks(unittest.TestCase):
         self.assertEqual(len(stands), 11)
         self.assertEqual(len(styles), 3)
         for stand in stands:
-            # modello umanoide di 1.16.5: texture 64x32
-            self.assertEqual(png_size_and_crc(ASSETS / f'textures/entity/stand/{stand}.png'), (64, 32), stand)
+            # modello "giocatore" di 1.16.5 con secondo strato: texture 64x64
+            self.assertEqual(png_size_and_crc(ASSETS / f'textures/entity/stand/{stand}.png'), (64, 64), stand)
             self.assertEqual(png_size_and_crc(ASSETS / f'textures/gui/hud/stand_{stand}.png'), (16, 16), stand)
         for style in styles:
             self.assertEqual(png_size_and_crc(ASSETS / f'textures/gui/hud/style_{style}.png'), (16, 16), style)
@@ -188,7 +188,8 @@ class ProjectChecks(unittest.TestCase):
         blocks = re.findall(r'MOVES\.put\(StandType\.([A-Z_]+), new Move\[\] \{(.*?)\n        \}\);', abilities, re.S)
         self.assertEqual(11, len(blocks))
         for stand, body in blocks:
-            first = re.search(r'm\("[^"]+", [^\n]*', body).group(0)
+            first = re.search(r'm[ps]?\("[^"]+", [^\n]*', body).group(0)
+            self.assertTrue(first.startswith('mp('), stand)        # posa dei pugni
             self.assertIn('p -> barrage(p, ', first, stand)        # la prima mossa e' sempre una raffica di pugni
             self.assertNotIn('shoot(', first, stand)
         stand_entity = read('entity/StandEntity.java')
@@ -221,7 +222,7 @@ class ProjectChecks(unittest.TestCase):
 
     def test_spin_moves_throw_the_ball_and_it_returns(self):
         abilities = read('logic/Abilities.java')
-        for name in ('throwSteelBall', 'spin', 'spinVortex', 'spinGuard'):
+        for name in ('throwSteelBall', 'bounceBall', 'spinVortex', 'spinGuard'):
             start = abilities.index('private static boolean %s(' % name)
             body = abilities[start:abilities.index('\n    }\n', start)]
             self.assertTrue('new SteelBallEntity(' in body or 'orbitBalls(' in body, name)
@@ -235,9 +236,43 @@ class ProjectChecks(unittest.TestCase):
         self.assertIn('.setUpdateInterval(1)', read('registry/ModEntities.java'))   # posizione inviata a ogni tick
 
     def test_new_item_art(self):
-        for name in ('stand_arrow', 'hamon_scroll', 'spin_scroll', 'boxing_manual', 'stone_mask', 'red_stone_of_aja',
-                     'steel_ball', 'projectile_knife', 'projectile_star', 'projectile_zip'):
+        for name in ('hamon_scroll', 'spin_scroll', 'boxing_manual', 'red_stone_of_aja',
+                     'projectile_knife', 'projectile_star', 'projectile_zip'):
             self.assertEqual(png_size_and_crc(ASSETS / f'textures/item/{name}.png'), (16, 16), name)
+        for name in ('stand_arrow', 'stone_mask', 'steel_ball'):          # ridisegnati piu' dettagliati
+            self.assertEqual(png_size_and_crc(ASSETS / f'textures/item/{name}.png'), (32, 32), name)
+
+    def test_stands_perform_the_abilities(self):
+        stand = read('entity/StandEntity.java')
+        abilities = read('logic/Abilities.java')
+        renderer = read('client/StandRenderer.java')
+        self.assertIn('ANIM =\n            EntityDataManager.createKey(StandEntity.class, DataSerializers.VARINT)', stand)
+        self.assertIn('this.dataManager.register(ANIM, ANIM_NONE);', stand)
+        self.assertIn('public static Vector3d actionPosition(PlayerEntity owner, int anim)', stand)
+        self.assertIn('public void animate(int type, int ticks)', stand)
+        self.assertIn('Vector3d spot = actionPosition(owner, this.getAnimation());', stand)
+        self.assertIn('new PlayerModel<StandEntity>(0.0F, false)', renderer)
+        self.assertIn('BipedModel.ArmPose.BOW_AND_ARROW', renderer)
+        self.assertIn('BipedModel.ArmPose.THROW_SPEAR', renderer)
+        self.assertIn('animateStand(p, m.anim);', abilities)
+        self.assertIn('StandEntity.actionPosition(p, StandEntity.ANIM_SHOOT).add(0, 1.3, 0)', abilities)
+        self.assertIn('Vector3d origin = shotOrigin(p);', abilities)
+        for name in ('Star Finger', 'Coltelli', 'Crossfire Hurricane', 'Emerald Splash', 'Tentacoli', 'Bomba su entità',
+                     'Bomba su blocco', 'Sheer Heart Attack', 'Braccio zippato', 'Fili'):
+            self.assertIn('ms("%s",' % name, abilities, name)      # i colpi a distanza usano la posa di tiro
+        self.assertIn('if (stand != null) stand.animate(StandEntity.ANIM_POWER, ticks);', abilities)  # Time Stop
+
+    def test_bouncing_ball_replaces_golden_spin(self):
+        abilities = read('logic/Abilities.java')
+        self.assertIn('m("Sfera rimbalzante", 30, 60, Abilities::bounceBall)', abilities)
+        self.assertNotIn('Golden Spin', abilities)
+        self.assertIn('.bouncing(3)', abilities)
+        ball = read('entity/SteelBallEntity.java')
+        self.assertIn('public SteelBallEntity bouncing(int count)', ball)
+        self.assertIn('private boolean redirect(', ball)
+        self.assertIn('hitSet.contains(hit.getUniqueID())', ball)
+        self.assertIn('Abilities.canProjectileHit(owner, e)', ball)
+        self.assertIn('public static boolean canProjectileHit(', abilities)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -48,7 +48,8 @@ con backup e Forge 1.16.5-36.2.39. Prima provare senza altre mod.
   (sprite metallico) che vola dritta, colpisce chi incontra e poi TORNA verso di te passando anche
   attraverso i blocchi; quando ti raggiunge fa un suono e sparisce. Non deve mai consumare la sfera in mano.
   Senza sfera in mano non deve partire nulla.
-- Spin, Golden Spin (tecnica 2): lancio con Wither e scatto in avanti; la sfera deve ritornare.
+- Spin, Sfera rimbalzante (tecnica 2): con almeno 2-3 mostri vicini la sfera passa dall'uno all'altro (fino a 3 rimbalzi)
+  colpendo ciascuno una sola volta, poi torna da te; con un solo bersaglio colpisce e ritorna.
 - Spin, Vortice rotante (3): due sfere girano a 4 blocchi per circa 2,5 s, poi tornano. Rotazione difensiva (4):
   tre sfere girano vicino per 4 s, poi tornano. Fluidità: il movimento non deve scattare (aggiornamento a ogni tick).
 - Se il giocatore muore o esce mentre le sfere sono in volo, le sfere devono sparire.

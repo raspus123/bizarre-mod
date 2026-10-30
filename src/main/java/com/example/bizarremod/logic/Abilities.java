@@ -117,7 +117,16 @@ public final class Abilities {
         Move m = move(d.stand, n);
         if (m == null) return;
         if (!ready(p, d, n, m.cost, true)) return;
-        if (m.action.test(p)) commit(p, d, n, m.cost, m.cooldown);
+        if (m.action.test(p)) {
+            commit(p, d, n, m.cost, m.cooldown);
+            animateStand(p, m.anim);
+        }
+    }
+
+    /** Fa eseguire la posa della mossa allo Stand evocato. */
+    private static void animateStand(ServerPlayerEntity p, int anim) {
+        StandEntity stand = activeStand(p);
+        if (stand != null) stand.animate(anim, anim == StandEntity.ANIM_POWER ? 24 : 14);
     }
 
     /** Una mossa: nome, costo in energia, ricarica in tick e azione (true = riuscita). */
@@ -126,17 +135,30 @@ public final class Abilities {
         final float cost;
         final int cooldown;
         final Predicate<ServerPlayerEntity> action;
+        final int anim;           // posa dello Stand mentre esegue la mossa
 
-        Move(String name, float cost, int cooldown, Predicate<ServerPlayerEntity> action) {
+        Move(String name, float cost, int cooldown, Predicate<ServerPlayerEntity> action, int anim) {
             this.name = name;
             this.cost = cost;
             this.cooldown = cooldown;
             this.action = action;
+            this.anim = anim;
         }
     }
 
+    /** Mossa di potere: lo Stand alza le braccia. */
     private static Move m(String name, float cost, int cooldown, Predicate<ServerPlayerEntity> action) {
-        return new Move(name, cost, cooldown, action);
+        return new Move(name, cost, cooldown, action, StandEntity.ANIM_POWER);
+    }
+
+    /** Mossa di pugni: lo Stand si mette davanti a te e colpisce. */
+    private static Move mp(String name, float cost, int cooldown, Predicate<ServerPlayerEntity> action) {
+        return new Move(name, cost, cooldown, action, StandEntity.ANIM_PUNCH);
+    }
+
+    /** Mossa a distanza: lo Stand fa un passo avanti, tende le braccia e i proiettili partono dalle sue mani. */
+    private static Move ms(String name, float cost, int cooldown, Predicate<ServerPlayerEntity> action) {
+        return new Move(name, cost, cooldown, action, StandEntity.ANIM_SHOOT);
     }
 
     private static Move move(StandType s, int n) {
@@ -149,76 +171,76 @@ public final class Abilities {
 
     static {
         MOVES.put(StandType.STAR_PLATINUM, new Move[] {
-            m("Raffica ORA", 25, 40, p -> barrage(p, 4.5, 7, 3.0F, "ORA ORA ORA ORA ORA!", 0)),
-            m("Star Finger", 30, 120, p -> starFinger(p)),
+            mp("Raffica ORA", 25, 40, p -> barrage(p, 4.5, 7, 3.0F, "ORA ORA ORA ORA ORA!", 0)),
+            ms("Star Finger", 30, 120, p -> starFinger(p)),
             m("Inala", 35, 200, p -> inhale(p)),
             m("Time Stop", 50, 400, p -> timeStop(p, 40, "STAR PLATINUM: THE WORLD!"))
         });
         MOVES.put(StandType.THE_WORLD, new Move[] {
-            m("Raffica MUDA", 25, 40, p -> barrage(p, 4.5, 8, 3.5F, "MUDA MUDA MUDA MUDA!", 0)),
-            m("Coltelli", 30, 100, p -> throwKnives(p)),
-            m("Road Roller", 45, 250, p -> blast(p, 5, 12F, 1.5, 0, ParticleTypes.POOF, 60,
+            mp("Raffica MUDA", 25, 40, p -> barrage(p, 4.5, 8, 3.5F, "MUDA MUDA MUDA MUDA!", 0)),
+            ms("Coltelli", 30, 100, p -> throwKnives(p)),
+            mp("Road Roller", 45, 250, p -> blast(p, 5, 12F, 1.5, 0, ParticleTypes.POOF, 60,
                     "ROAD ROLLER DA!", true, fx(Effects.SLOWNESS, 60, 2))),
             m("Time Stop", 70, 700, p -> timeStop(p, 100, "ZA WARUDO! TOKI WO TOMARE!"))
         });
         MOVES.put(StandType.CRAZY_DIAMOND, new Move[] {
-            m("Raffica DORA", 25, 40, p -> barrage(p, 4.5, 6, 2.5F, "DORARARARARA!", 0)),
+            mp("Raffica DORA", 25, 40, p -> barrage(p, 4.5, 6, 2.5F, "DORARARARARA!", 0)),
             m("Restore", 40, 300, p -> restore(p)),
             m("Onda curativa", 45, 400, p -> healingWave(p)),
             m("Guardia", 30, 300, p -> buff(p, "CRAZY DIAMOND: GUARDIA!", SoundEvents.ENTITY_PLAYER_LEVELUP,
                     fx(Effects.ABSORPTION, 200, 4), fx(Effects.RESISTANCE, 200, 1)))
         });
         MOVES.put(StandType.KILLER_QUEEN, new Move[] {
-            m("Kill Barrage", 25, 40, p -> barrage(p, 4.5, 5, 3.0F, "KILLER QUEEN: KILL BARRAGE!", 0)),
-            m("Bomba su entità", 25, 100, p -> bombCoin(p, 3.0F, Explosion.Mode.NONE, "KILLER QUEEN: PRIMA BOMBA!")),
-            m("Bomba su blocco", 45, 200, p -> bombCoin(p, 3.5F, Explosion.Mode.BREAK, "KILLER QUEEN: BOMBA!")),
-            m("Sheer Heart Attack", 60, 500, p -> sheerHeartAttack(p))
+            mp("Kill Barrage", 25, 40, p -> barrage(p, 4.5, 5, 3.0F, "KILLER QUEEN: KILL BARRAGE!", 0)),
+            ms("Bomba su entità", 25, 100, p -> bombCoin(p, 3.0F, Explosion.Mode.NONE, "KILLER QUEEN: PRIMA BOMBA!")),
+            ms("Bomba su blocco", 45, 200, p -> bombCoin(p, 3.5F, Explosion.Mode.BREAK, "KILLER QUEEN: BOMBA!")),
+            ms("Sheer Heart Attack", 60, 500, p -> sheerHeartAttack(p))
         });
         MOVES.put(StandType.GOLD_EXPERIENCE, new Move[] {
-            m("Raffica MUDA", 25, 40, p -> barrage(p, 4.5, 6, 2.8F, "MUDA MUDA MUDA MUDA!", 0)),
+            mp("Raffica MUDA", 25, 40, p -> barrage(p, 4.5, 6, 2.8F, "MUDA MUDA MUDA MUDA!", 0)),
             m("Life Giver", 45, 200, p -> goldLife(p)),
-            m("Dolore amplificato", 35, 160, p -> ranged(p, 5, 6F, 0.4, ParticleTypes.CRIT,
+            mp("Dolore amplificato", 35, 160, p -> ranged(p, 5, 6F, 0.4, ParticleTypes.CRIT,
                     "GOLD EXPERIENCE: DOLORE AMPLIFICATO!",
                     fx(Effects.NAUSEA, 200, 0), fx(Effects.WEAKNESS, 200, 1), fx(Effects.SLOWNESS, 200, 2))),
             m("Senso della vita", 25, 300, p -> lifeSense(p))
         });
         MOVES.put(StandType.SILVER_CHARIOT, new Move[] {
-            m("Stoccate", 25, 40, p -> barrage(p, 6.0, 8, 2.5F, "SILVER CHARIOT!", 0)),
+            mp("Stoccate", 25, 40, p -> barrage(p, 6.0, 8, 2.5F, "SILVER CHARIOT!", 0)),
             m("Armor Off", 40, 400, p -> buff(p, "SILVER CHARIOT: ARMOR OFF!", SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP,
                     fx(Effects.SPEED, 200, 3), fx(Effects.STRENGTH, 200, 1))),
-            m("Scatto con lo stocco", 30, 120, p -> rapierDash(p)),
+            mp("Scatto con lo stocco", 30, 120, p -> rapierDash(p)),
             m("Parata", 30, 200, p -> buff(p, "SILVER CHARIOT: PARATA!", SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP,
                     fx(Effects.RESISTANCE, 60, 3), fx(Effects.SPEED, 60, 1)))
         });
         MOVES.put(StandType.MAGICIANS_RED, new Move[] {
-            m("Pugni di fuoco", 25, 40, p -> barrage(p, 4.5, 5, 2.5F, "MAGICIAN'S RED: PUGNI DI FUOCO!", 8)),
-            m("Crossfire Hurricane", 30, 80, p -> crossfire(p)),
+            mp("Pugni di fuoco", 25, 40, p -> barrage(p, 4.5, 5, 2.5F, "MAGICIAN'S RED: PUGNI DI FUOCO!", 8)),
+            ms("Crossfire Hurricane", 30, 80, p -> crossfire(p)),
             m("Red Bind", 50, 300, p -> fireRing(p)),
             m("Muro di fuoco", 40, 250, p -> fireWall(p))
         });
         MOVES.put(StandType.HIEROPHANT_GREEN, new Move[] {
-            m("Raffica di pugni", 25, 40, p -> barrage(p, 4.5, 6, 2.5F, "HIEROPHANT GREEN: RAFFICA DI PUGNI!", 0)),
-            m("Emerald Splash", 30, 80, p -> emeraldSplash(p)),
-            m("Tentacoli", 35, 200, p -> tentacle(p)),
+            mp("Raffica di pugni", 25, 40, p -> barrage(p, 4.5, 6, 2.5F, "HIEROPHANT GREEN: RAFFICA DI PUGNI!", 0)),
+            ms("Emerald Splash", 30, 80, p -> emeraldSplash(p)),
+            ms("Tentacoli", 35, 200, p -> tentacle(p)),
             m("Rete di tentacoli", 40, 300, p -> blast(p, 8, 3F, 0.0, 0, ParticleTypes.HAPPY_VILLAGER, 80,
                     "HIEROPHANT GREEN: RETE DI TENTACOLI!", true, fx(Effects.SLOWNESS, 120, 4)))
         });
         MOVES.put(StandType.KING_CRIMSON, new Move[] {
-            m("Death Chop", 25, 40, p -> barrage(p, 4.5, 5, 3.5F, "KING CRIMSON: DEATH CHOP!", 0)),
-            m("Donut", 40, 200, p -> donut(p)),
+            mp("Death Chop", 25, 40, p -> barrage(p, 4.5, 5, 3.5F, "KING CRIMSON: DEATH CHOP!", 0)),
+            mp("Donut", 40, 200, p -> donut(p)),
             m("Erase Time", 60, 600, p -> eraseTime(p)),
-            m("Salto nel tempo", 45, 300, p -> timeSkip(p))
+            mp("Salto nel tempo", 45, 300, p -> timeSkip(p))
         });
         MOVES.put(StandType.STICKY_FINGERS, new Move[] {
-            m("Raffica ARI", 25, 40, p -> barrage(p, 4.5, 6, 2.8F, "ARI ARI ARI ARI ARRIVEDERCI!", 0)),
+            mp("Raffica ARI", 25, 40, p -> barrage(p, 4.5, 6, 2.8F, "ARI ARI ARI ARI ARRIVEDERCI!", 0)),
             m("Zipper", 35, 200, p -> zipperEscape(p)),
-            m("Braccio zippato", 30, 160, p -> zipArm(p)),
+            ms("Braccio zippato", 30, 160, p -> zipArm(p)),
             m("Onda zip", 40, 250, p -> blast(p, 4, 7F, 0.0, 0.7, ParticleTypes.CLOUD, 40,
                     "STICKY FINGERS: ONDA ZIP!", true))
         });
         MOVES.put(StandType.STONE_FREE, new Move[] {
-            m("Raffica ORA", 25, 40, p -> barrage(p, 4.5, 6, 2.5F, "STONE FREE: ORA ORA ORA!", 0)),
-            m("Fili", 30, 160, p -> threads(p)),
+            mp("Raffica ORA", 25, 40, p -> barrage(p, 4.5, 6, 2.5F, "STONE FREE: ORA ORA ORA!", 0)),
+            ms("Fili", 30, 160, p -> threads(p)),
             m("Ali di filo", 30, 300, p -> buff(p, "STONE FREE: ALI DI FILO!", SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP,
                     fx(Effects.SLOW_FALLING, 300, 0), fx(Effects.JUMP_BOOST, 300, 3), fx(Effects.SPEED, 300, 1))),
             m("Rampino di filo", 20, 100, p -> grapple(p))
@@ -334,6 +356,8 @@ public final class Abilities {
             give(e, fx(Effects.SLOWNESS, ticks, 9), fx(Effects.MINING_FATIGUE, ticks, 9), fx(Effects.WEAKNESS, ticks, 9));
         }
         give(p, fx(Effects.SPEED, ticks, 2), fx(Effects.STRENGTH, ticks, 1));
+        StandEntity stand = activeStand(p);
+        if (stand != null) stand.animate(StandEntity.ANIM_POWER, ticks);
         say(p, shout);
         sound(p, SoundEvents.BLOCK_BEACON_ACTIVATE);
         return true;
@@ -397,7 +421,8 @@ public final class Abilities {
         for (int i = 0; i < count; i++) {
             LivingEntity target = foes.get(i);
             StandShotEntity shot = new StandShotEntity(p.world, p, new ItemStack(Items.FIREWORK_STAR));
-            shot.setPosition(p.getPosX(), p.getPosYEye(), p.getPosZ());
+            Vector3d origin = shotOrigin(p);
+            shot.setPosition(origin.x, origin.y, origin.z);
             shot.setMotion(p.getRNG().nextGaussian() * 0.3, 0.6, p.getRNG().nextGaussian() * 0.3);
             shot.damage(0f, 0.0).explosion(2.0F, Explosion.Mode.NONE).homing(target.getUniqueID())
                     .lifetime(45).trail(ParticleTypes.SMOKE);
@@ -603,7 +628,7 @@ public final class Abilities {
         });
         STYLE_MOVES.put(FightStyle.SPIN, new Move[] {
             m("Lancio della sfera", 20, 60, Abilities::throwSteelBall),
-            m("Golden Spin", 30, 60, Abilities::spin),
+            m("Sfera rimbalzante", 30, 60, Abilities::bounceBall),
             m("Vortice rotante", 30, 120, Abilities::spinVortex),
             m("Rotazione difensiva", 25, 180, Abilities::spinGuard)
         });
@@ -746,15 +771,20 @@ public final class Abilities {
         return true;
     }
 
+    /** Vero se un proiettile di "owner" puo' colpire "target": vivo, non alleato, PvP consentito, non il suo Stand. */
+    public static boolean canProjectileHit(ServerPlayerEntity owner, LivingEntity target) {
+        if (!target.isAlive() || target == owner || target instanceof StandEntity
+                || target.isSpectator() || target.isOnSameTeam(owner)) return false;
+        return !(target instanceof PlayerEntity) || owner.canAttackPlayer((PlayerEntity) target);
+    }
+
     /**
      * Colpo di un proiettile (sfera d'acciaio o colpo di uno Stand), sempre lato server: controlla il bersaglio
      * (vivo, non alleato, PvP consentito) e applica danno, spinta, fuoco, effetti e l'eventuale trascinamento.
      */
     public static boolean projectileHit(ServerPlayerEntity owner, LivingEntity target, float dmg, double kb,
                                         int fireSeconds, boolean pull, List<EffectInstance> effects) {
-        if (!target.isAlive() || target == owner || target instanceof StandEntity
-                || target.isSpectator() || target.isOnSameTeam(owner)) return false;
-        if (target instanceof PlayerEntity && !owner.canAttackPlayer((PlayerEntity) target)) return false;
+        if (!canProjectileHit(owner, target)) return false;
         if (dmg > 0) hit(owner, target, dmg, kb);
         if (fireSeconds > 0) target.setFire(fireSeconds);
         for (EffectInstance effect : effects) target.addPotionEffect(new EffectInstance(effect));
@@ -854,16 +884,11 @@ public final class Abilities {
         return true;
     }
 
-    // Spin 2, Golden Spin: lancio rotante della sfera (con Wither) mentre ti lanci in avanti
-    private static boolean spin(ServerPlayerEntity p) {
-        SteelBallEntity ball = new SteelBallEntity(p.world, p).straight(7f, 4f, 7).effects(0, 60);
-        if (!launchBall(p, ball, 1.9)) return false;
-        Vector3d look = p.getLookVec();
-        p.setMotion(look.x * 1.4, Math.max(0.25, look.y * 0.7), look.z * 1.4);
-        p.velocityChanged = true;
-        p.fallDistance = 0;
-        particles(p, ParticleTypes.SWEEP_ATTACK, p.getPosX(), p.getPosYHeight(0.5), p.getPosZ(), 5, 0.5, 0.3, 0.5, 0.0);
-        say(p, "GOLDEN SPIN!");
+    // Spin 2, Sfera rimbalzante: la sfera rimbalza fino a 3 volte da un nemico all'altro (Wither) e poi torna da te
+    private static boolean bounceBall(ServerPlayerEntity p) {
+        SteelBallEntity ball = new SteelBallEntity(p.world, p).straight(6f, 4f, 10).effects(0, 60).bouncing(3);
+        if (!launchBall(p, ball, 2.2)) return false;
+        say(p, "SFERA RIMBALZANTE!");
         return true;
     }
 
@@ -908,21 +933,29 @@ public final class Abilities {
 
     // ================================================================== UTILITA'
 
+    /** Da dove parte un proiettile: dalle mani dello Stand (dove sara' nella posa di tiro) o, senza Stand, dagli occhi. */
+    private static Vector3d shotOrigin(ServerPlayerEntity p) {
+        if (activeStand(p) == null) return p.getEyePosition(1.0F).add(0, -0.2, 0);
+        return StandEntity.actionPosition(p, StandEntity.ANIM_SHOOT).add(0, 1.3, 0);
+    }
+
     /**
      * Genera uno o piu' proiettili (a ventaglio) davanti al giocatore. "setup" configura ogni proiettile:
      * danno, effetti, fuoco, esplosione, inseguimento.
      */
     private static boolean shoot(ServerPlayerEntity p, ItemStack icon, int count, double fanDegrees, double speed,
                                  int lifetime, IParticleData trail, String shout, Consumer<StandShotEntity> setup) {
-        Vector3d look = p.getLookVec();
+        Vector3d origin = shotOrigin(p);
+        Vector3d aim = p.getEyePosition(1.0F).add(p.getLookVec().scale(24.0));
+        Vector3d base = aim.subtract(origin).normalize();
         boolean any = false;
         for (int i = 0; i < count; i++) {
             double offset = count == 1 ? 0.0 : (i - (count - 1) / 2.0) * (fanDegrees / (count - 1));
-            Vector3d dir = look.rotateYaw((float) Math.toRadians(offset))
+            Vector3d dir = base.rotateYaw((float) Math.toRadians(offset))
                     .rotateYaw((float) (p.getRNG().nextGaussian() * 0.02))
                     .rotatePitch((float) (p.getRNG().nextGaussian() * 0.02));
             StandShotEntity shot = new StandShotEntity(p.world, p, icon.copy());
-            shot.setPosition(p.getPosX() + dir.x * 0.8, p.getPosYEye() - 0.2 + dir.y * 0.8, p.getPosZ() + dir.z * 0.8);
+            shot.setPosition(origin.x + dir.x * 0.6, origin.y + dir.y * 0.6, origin.z + dir.z * 0.6);
             shot.setMotion(dir.scale(speed));
             shot.lifetime(lifetime).trail(trail);
             setup.accept(shot);

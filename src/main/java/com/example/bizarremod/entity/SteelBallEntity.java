@@ -5,8 +5,10 @@ import com.example.bizarremod.registry.ModEntities;
 import com.example.bizarremod.registry.ModItems;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -53,6 +55,8 @@ public class SteelBallEntity extends ProjectileItemEntity {
     private int hitCooldown = 8;
     private int slowTicks;
     private int witherTicks;
+    private int bounces;
+    private final Set<UUID> hitSet = new HashSet<UUID>();
     private final Map<UUID, Integer> lastHit = new HashMap<UUID, Integer>();
 
     public SteelBallEntity(EntityType<? extends SteelBallEntity> type, World world) {
@@ -85,6 +89,12 @@ public class SteelBallEntity extends ProjectileItemEntity {
         this.orbitTicks = ticks;
         this.outDamage = damage;
         this.backDamage = damage;
+        return this;
+    }
+
+    /** Rimbalza fino a "count" volte da un nemico a quello piu' vicino prima di tornare. */
+    public SteelBallEntity bouncing(int count) {
+        this.bounces = count;
         return this;
     }
 
@@ -195,22 +205,50 @@ public class SteelBallEntity extends ProjectileItemEntity {
         this.remove();
     }
 
-    /** Impatto durante il volo in avanti: colpisce, poi la sfera inizia a tornare. */
+    /** Impatto durante il volo in avanti: colpisce, poi rimbalza sul nemico piu' vicino o inizia a tornare. */
     @Override
     protected void onImpact(RayTraceResult result) {
         if (this.world.isRemote) return;
+        PlayerEntity owner = ownerId == null ? null : this.world.getPlayerByUuid(ownerId);
         if (result.getType() == RayTraceResult.Type.ENTITY) {
             Entity hit = ((EntityRayTraceResult) result).getEntity();
-            PlayerEntity owner = ownerId == null ? null : this.world.getPlayerByUuid(ownerId);
-            if (owner instanceof ServerPlayerEntity && hit instanceof LivingEntity) {
-                if (Abilities.projectileHit((ServerPlayerEntity) owner, (LivingEntity) hit, outDamage, knockback,
-                        0, false, effectList())) {
-                    lastHit.put(hit.getUniqueID(), this.ticksExisted);
+            if (hitSet.contains(hit.getUniqueID())) return;       // sto ancora attraversando un bersaglio gia' colpito
+            if (owner instanceof ServerPlayerEntity && hit instanceof LivingEntity
+                    && Abilities.projectileHit((ServerPlayerEntity) owner, (LivingEntity) hit, outDamage, knockback,
+                            0, false, effectList())) {
+                lastHit.put(hit.getUniqueID(), this.ticksExisted);
+                hitSet.add(hit.getUniqueID());
+                if (bounces > 0 && redirect((ServerPlayerEntity) owner)) {
+                    bounces--;
+                    phaseTicks = 0;
+                    ((ServerWorld) this.world).spawnParticle(ParticleTypes.CRIT, this.getPosX(), this.getPosY(),
+                            this.getPosZ(), 12, 0.2, 0.2, 0.2, 0.15);
+                    return;
                 }
             }
         }
         ((ServerWorld) this.world).spawnParticle(ParticleTypes.CRIT, this.getPosX(), this.getPosY(), this.getPosZ(),
                 12, 0.2, 0.2, 0.2, 0.15);
         startReturn();
+    }
+
+    /** Punta la sfera sul nemico valido piu' vicino (entro 9 blocchi) non ancora colpito. */
+    private boolean redirect(final ServerPlayerEntity owner) {
+        List<LivingEntity> near = this.world.getEntitiesWithinAABB(LivingEntity.class, this.getBoundingBox().grow(9.0D),
+                e -> e != owner && !hitSet.contains(e.getUniqueID()) && Abilities.canProjectileHit(owner, e));
+        LivingEntity best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (LivingEntity e : near) {
+            double distance = e.getDistanceSq(this);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = e;
+            }
+        }
+        if (best == null) return false;
+        Vector3d to = new Vector3d(best.getPosX(), best.getPosYHeight(0.5D), best.getPosZ())
+                .subtract(this.getPositionVec());
+        this.setMotion(to.normalize().scale(2.4D));
+        return true;
     }
 }

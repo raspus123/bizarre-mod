@@ -1,3 +1,10 @@
+# Novità 1.5.0
+
+Leggi `AGGIORNAMENTO-1.5.0.md`: gli Stand eseguono davvero le mosse (si spostano, assumono pose e i
+proiettili partono dalle loro mani), nuova mossa Spin 2 «Sfera rimbalzante» al posto del Golden Spin,
+skin degli Stand ridisegnate con secondo strato (64x64) e nuove texture per sfera, maschera e freccia.
+Client e server devono avere la 1.5.0.
+
 # Novità 1.4.0
 
 Leggi `AGGIORNAMENTO-1.4.0.md`: tutte le mosse dello Spin lanciano la sfera e la sfera ritorna da te,
@@ -81,7 +88,7 @@ I danni indicati sono punti vita nominali prima di armatura, resistenze e altre 
 | Hamon | Respirazione Hamon | 20 | 10 s | Cura 4 punti vita, rigenerazione 5 s, resistenza 3 s; solo Umani |
 | Hamon | Onda solare | 35 | 6 s | Cono a 6 blocchi, 6 danni, rallentamento e debolezza |
 | Spin | Lancio della sfera | 20 | 3 s | Sfera lanciata in linea retta (9 danni, rallentamento): dopo l'impatto o la distanza massima TORNA da te e colpisce chi incontra (5 danni) |
-| Spin | Golden Spin | 30 | 3 s | Lancio rotante con Wither (7 danni) mentre ti lanci in avanti; la sfera ritorna da te |
+| Spin | Sfera rimbalzante | 30 | 3 s | La sfera rimbalza fino a 3 volte da un nemico a quello più vicino (6 danni e Wither a ogni colpo), poi torna da te |
 | Spin | Vortice rotante | 30 | 6 s | Due sfere girano intorno a te a 4 blocchi per 2,5 s (6 danni, rallentamento) e poi tornano |
 | Spin | Rotazione difensiva | 25 | 9 s | Tre sfere ti girano vicino per 4 s e colpiscono chi si avvicina (3 danni); Resistenza II e velocità |
 | Pugilato | Jab combinati | 20 | 2 s | Quattro colpi da 2 danni a 3 blocchi, breve velocità |

@@ -17,15 +17,16 @@ CLEAR = (0, 0, 0, 0)
 
 
 class Canvas:
-    def __init__(self):
-        self.p = [[CLEAR] * 16 for _ in range(16)]
+    def __init__(self, n=16):
+        self.n = n
+        self.p = [[CLEAR] * n for _ in range(n)]
 
     def set(self, x, y, c):
-        if 0 <= x < 16 and 0 <= y < 16:
+        if 0 <= x < self.n and 0 <= y < self.n:
             self.p[y][x] = c
 
     def get(self, x, y):
-        return self.p[y][x] if 0 <= x < 16 and 0 <= y < 16 else CLEAR
+        return self.p[y][x] if 0 <= x < self.n and 0 <= y < self.n else CLEAR
 
     def rect(self, x0, y0, x1, y1, c):
         for y in range(y0, y1 + 1):
@@ -41,8 +42,8 @@ class Canvas:
     def outline(self, color):
         """Contorno di 1 pixel attorno a tutto cio' che e' stato disegnato (stile oggetti vanilla)."""
         add = []
-        for y in range(16):
-            for x in range(16):
+        for y in range(self.n):
+            for x in range(self.n):
                 if self.p[y][x][3] != 0:
                     continue
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -103,43 +104,6 @@ GLOVE6 = [
 
 
 # ---------------------------------------------------------------- Freccia dello Stand
-def stand_arrow():
-    c = Canvas()
-    shaft, shaft_d = C(122, 84, 52), C(84, 56, 34)
-    gold, gold_d = C(244, 200, 72), C(176, 122, 30)
-    silver, silver_d, white = C(214, 224, 238), C(140, 156, 182), C(255, 255, 255)
-    red, red_d = C(206, 52, 62), C(132, 28, 40)
-    # asta diagonale (dal basso a sinistra verso l'alto a destra)
-    for i in range(9):
-        x, y = 3 + i, 12 - i
-        c.set(x, y, shaft)
-        c.set(x + 1, y, shaft_d)
-    for i in (2, 3, 7):                              # fasce dorate
-        c.set(3 + i, 12 - i, gold)
-        c.set(4 + i, 12 - i, gold_d)
-    # impennaggi rossi all'estremita'
-    for (x, y) in ((0, 10), (1, 10), (1, 11), (2, 11), (2, 12)):
-        c.set(x, y, red)
-    for (x, y) in ((3, 13), (4, 13), (4, 14), (5, 14), (3, 14)):
-        c.set(x, y, red_d)
-    c.set(2, 13, red)
-    c.set(1, 14, red)
-    # punta a losanga con riflessi
-    cx, cy = 11.5, 3.5
-    for y in range(0, 8):
-        for x in range(7, 16):
-            a = ((x + 0.5 - cx) - (y + 0.5 - cy)) / 1.414
-            b = ((x + 0.5 - cx) + (y + 0.5 - cy)) / 1.414
-            if -2.6 <= a <= 4.8 and abs(b) <= 3.5 * (5.0 - a) / 7.6:
-                col = silver if b < 0.4 else silver_d
-                if abs(b + 1.0) < 0.55 and -1.5 < a < 3.0:
-                    col = white
-                c.set(x, y, col)
-    c.set(11, 3, C(60, 70, 96))                      # foro al centro della punta
-    c.outline(OUT)
-    return c.p
-
-
 # ---------------------------------------------------------------- Pergamene e manuale
 def scroll(accent, accent_d, symbol_rows, emblem_color):
     c = Canvas()
@@ -187,39 +151,6 @@ def boxing_manual():
 
 
 # ---------------------------------------------------------------- Maschera di Pietra
-def stone_mask():
-    c = Canvas()
-    stone, stone_l, stone_d = C(186, 180, 168), C(222, 216, 204), C(132, 126, 116)
-    hole, glow, tooth = C(26, 22, 26), C(176, 44, 44), C(238, 234, 224)
-    # volto ovale
-    for y in range(1, 15):
-        for x in range(2, 14):
-            nx, ny = (x + 0.5 - 8) / 5.9, (y + 0.5 - 8) / 6.9
-            if nx * nx + ny * ny <= 1.0:
-                col = stone_l if (nx < -0.35 and ny < 0.2) else (stone_d if (nx > 0.55 or ny > 0.72) else stone)
-                c.set(x, y, col)
-    # sopracciglia e occhi incavati
-    for (x0, x1) in ((4, 6), (9, 11)):
-        c.rect(x0, 5, x1, 5, stone_d)
-        c.rect(x0, 6, x1, 7, hole)
-        c.set(x0 + 1, 7, glow)
-    # naso
-    c.rect(7, 7, 8, 10, stone_d)
-    c.set(7, 10, hole)
-    c.set(8, 10, hole)
-    # bocca con denti
-    c.rect(5, 12, 10, 12, hole)
-    for x in (6, 8, 10):
-        c.set(x, 12, tooth)
-    # spuntoni ai lati (la maschera ha le punte che penetrano nel cranio)
-    for (x, y) in ((1, 5), (0, 4), (14, 5), (15, 4), (1, 8), (14, 8)):
-        c.set(x, y, tooth)
-    c.set(2, 4, stone_d)
-    c.set(13, 4, stone_d)
-    c.outline(OUT)
-    return c.p
-
-
 # ---------------------------------------------------------------- Pietra Rossa di Aja
 RUBY = [
     "................",
@@ -295,23 +226,172 @@ def projectile_zip():
     return c.p
 
 
+# ---------------------------------------------------------------- Oggetti a 32x32 (piu' dettagliati)
+def _noise(x, y, k=5):
+    return (((x * 73856093) ^ (y * 19349663)) % (2 * k + 1)) - k
+
+
 def steel_ball():
-    c = Canvas()
-    for y in range(16):
-        for x in range(16):
-            dx, dy = x + 0.5 - 8.0, y + 0.5 - 8.0
+    """Sfera d'acciaio: acciaio lucido con riflesso e spirale aurea dorata incisa."""
+    c = Canvas(32)
+    R = 14.4
+    for y in range(32):
+        for x in range(32):
+            dx, dy = x + 0.5 - 16.0, y + 0.5 - 16.0
             d = math.hypot(dx, dy)
-            if d > 6.6:
+            if d > R:
                 continue
-            # sfumatura metallica: luce in alto a sinistra, ombra in basso a destra
-            lit = 1.0 - ((dx + dy) / (2 * 6.6) + 1) / 2          # 1 = luce, 0 = ombra
-            base = int(92 + 150 * lit)
-            col = C(min(255, base - 6), min(255, base), min(255, base + 12))
-            if abs(dy + 0.5) < 0.9 and d < 6.0:                     # fascia incisa al centro
-                col = C(236, 190, 70) if lit > 0.35 else C(168, 122, 34)
-            c.set(x, y, col)
-    for (x, y) in ((4, 3), (5, 3), (4, 4)):                         # riflesso brillante
+            nx, ny = dx / R, dy / R
+            nz = math.sqrt(max(0.0, 1 - nx * nx - ny * ny))
+            lam = max(0.0, nx * -0.5 + ny * -0.6 + nz * 0.62)
+            spec = max(0.0, nx * -0.35 + ny * -0.45 + nz * 0.82) ** 18 * 130
+            v = max(0, min(255, 62 + 165 * lam + spec - (d / R) ** 6 * 38 + _noise(x, y, 2)))
+            c.set(x, y, C(int(v) - 8 if v > 8 else 0, int(v), min(255, int(v) + 16)))
+    # spirale logaritmica (tre giri circa, come l'incisione della sfera): solco scuro + filo d'oro
+    pts = []
+    for i in range(0, 1800):
+        t = i * 0.01
+        r = 1.0 * math.exp(0.155 * t)
+        if r > R - 1.8:
+            break
+        ang = t + 0.6
+        pts.append((16.0 + r * math.cos(ang), 16.0 + r * math.sin(ang)))
+    for (px, py) in pts:
+        c.set(int(px) + 1, int(py) + 1, C(70, 48, 18))
+    for (px, py) in pts:
+        c.set(int(px), int(py), C(244, 202, 80))
+    for (px, py) in pts[::7]:
+        c.set(int(px), int(py), C(255, 238, 150))
+    c.set(15, 15, C(244, 202, 80))
+    c.set(16, 15, C(244, 202, 80))
+    c.set(15, 16, C(170, 120, 36))
+    for (x, y) in ((8, 7), (9, 7), (8, 8), (7, 9)):          # riflesso principale
         c.set(x, y, C(255, 255, 255))
+    c.outline(OUT)
+    return c.p
+
+
+def _hw(y):
+    """Mezza larghezza del volto della Maschera di Pietra alla quota y (cupola larga, mento stretto)."""
+    t = (y - 2.0) / 28.0
+    if t < 0 or t > 1:
+        return 0.0
+    if t < 0.30:
+        return 12.6 * math.sqrt(max(0.0, 1 - ((0.30 - t) / 0.30) ** 2))
+    return 12.6 * math.sqrt(max(0.0, 1 - ((t - 0.30) / 0.70) ** 1.7)) + 1.5 * (1 - t)
+
+
+def stone_mask():
+    """Maschera di Pietra: volto di pietra pallida con arcate sopracciliari, occhi incavati, naso,
+    bocca severa, incisioni sulle guance e le punte che escono dai bordi."""
+    c = Canvas(32)
+    cx = 15.5
+    stone, light, dark = (208, 202, 188), (236, 232, 220), (112, 104, 92)
+    for y in range(2, 31):
+        w = _hw(y + 0.5)
+        for x in range(32):
+            u = (x + 0.5 - cx)
+            if abs(u) > w:
+                continue
+            k = 1.08 - 0.32 * ((u / max(w, 1)) + 1) / 2            # luce da sinistra
+            k -= max(0.0, (y - 22) / 40.0)                         # piu' scuro verso il mento
+            v = _noise(x, y, 5)
+            c.set(x, y, C(int(min(255, stone[0] * k + v)), int(min(255, stone[1] * k + v)),
+                          int(min(255, stone[2] * k + v))))
+    # punte sui bordi (la maschera ha gli spuntoni che penetrano nel cranio)
+    for yy in (10, 16, 22):
+        w = _hw(yy + 0.5)
+        for side in (-1, 1):
+            ex = cx + side * w
+            for step in range(5):
+                half = max(0, 1 - step // 2)
+                for dyy in range(-half, half + 1):
+                    c.set(int(ex + side * (step + 0.5)), yy + dyy, C(*light))
+    # incisione a losanga sulla fronte
+    for (x, y) in ((15, 6), (16, 6), (14, 7), (17, 7), (13, 8), (18, 8), (14, 9), (17, 9), (15, 10), (16, 10)):
+        c.set(x, y, C(*dark))
+    # arcate sopracciliari (inclinate verso il naso) con riflesso sopra
+    for side in (-1, 1):
+        for i in range(9):
+            x = int(cx + side * (3 + i))
+            y = 11 + int((8 - i) * 0.35) - 0
+            c.set(x, y, C(*dark))
+            c.set(x, y + 1, C(*dark))
+            c.set(x, y - 1, C(*light))
+    # occhi: mandorle incavate inclinate
+    for side, tilt in ((-1, 0.28), (1, -0.28)):
+        ex, ey = cx + side * 6.6, 15.4
+        for y in range(11, 21):
+            for x in range(32):
+                dx, dy = x + 0.5 - ex, y + 0.5 - ey
+                rx = dx * math.cos(tilt * side) + dy * math.sin(tilt * side) * -1
+                ry = dx * math.sin(tilt * side) + dy * math.cos(tilt * side)
+                if (rx / 4.4) ** 2 + (ry / 1.9) ** 2 <= 1.0:
+                    c.set(x, y, C(26, 22, 24))
+        c.set(int(ex - side * 1.5), 14, C(74, 66, 66))
+    # naso: costa luminosa a sinistra, ombra a destra, narici
+    for y in range(14, 23):
+        c.set(15, y, C(*light))
+        c.set(16, y, C(150, 142, 128))
+    for (x, y) in ((13, 22), (14, 22), (17, 22), (18, 22), (14, 23), (17, 23)):
+        c.set(x, y, C(72, 64, 58))
+    # bocca: linea severa leggermente china, labbra evidenziate
+    for x in range(10, 22):
+        yy = 25 + int(((x - 15.5) / 6.0) ** 2 * 1.6)
+        c.set(x, yy, C(58, 50, 48))
+        c.set(x, yy - 1, C(*light))
+        c.set(x, yy + 1, C(150, 142, 128))
+    # incisioni verticali sulle guance
+    for side in (-1, 1):
+        for y in range(18, 25):
+            c.set(int(cx + side * 8.5 - (0 if side < 0 else 1)), y, C(*dark))
+    c.outline(OUT)
+    return c.p
+
+
+def stand_arrow():
+    """Freccia dello Stand: punta d'acciaio ornata con foro e alette, asta scura con fasce dorate e piume."""
+    c = Canvas(32)
+    ox, oy = 2.0, 30.0
+    ux, uy, nx, ny = 0.7071, -0.7071, 0.7071, 0.7071
+    shaft, shaft_l = (104, 44, 44), (150, 76, 66)
+    gold, gold_d = (246, 206, 84), (170, 118, 30)
+    cream, red, red_d = (244, 236, 214), (200, 52, 60), (132, 30, 42)
+    for y in range(32):
+        for x in range(32):
+            px, py = x + 0.5 - ox, y + 0.5 - oy
+            a = px * ux + py * uy
+            b = px * nx + py * ny
+            col = None
+            if 8 <= a <= 31 and abs(b) <= 1.5:                              # asta
+                col = shaft_l if b < -0.3 else shaft
+                if abs(b) < 0.5:
+                    col = (178, 96, 80)
+                for (lo, hi) in ((11, 12.6), (17, 18.6), (27, 29)):
+                    if lo <= a <= hi:
+                        col = gold if b < 0.4 else gold_d
+            if 0 <= a < 12 and abs(b) <= 1.4 + (12 - a) * 0.42:             # impennaggio
+                stripe = int(a * 0.9) % 3
+                col = cream if stripe == 0 else (red if b < 0 else red_d)
+                if abs(b) < 0.45:
+                    col = (96, 44, 40)
+            if 29 <= a <= 42:                                              # punta d'acciaio
+                if a <= 34:
+                    hw = 1.5 + (a - 29) * (6.2 - 1.5) / 5.0
+                else:
+                    hw = 6.2 * max(0.0, 1 - ((a - 34) / 8.0) ** 1.5)
+                if abs(b) <= hw:
+                    col = (226, 234, 244) if b < -0.6 else ((150, 164, 190) if b > 1.2 else (196, 208, 224))
+                    if abs(b) < 0.5:
+                        col = (255, 255, 255)
+                    if hw - abs(b) < 0.9:
+                        col = (112, 124, 150)
+            if 26 <= a <= 31 and 1.5 < abs(b) <= 1.5 + (a - 26) * 0.9:     # alette
+                col = (170, 184, 208) if b < 0 else (118, 130, 156)
+            if math.hypot(a - 35.5, b) <= 1.7:                             # foro nella punta
+                col = None
+            if col is not None:
+                c.set(x, y, C(col[0], col[1], col[2]))
     c.outline(OUT)
     return c.p
 
@@ -332,7 +412,8 @@ ITEMS = {
 
 def main():
     for name, fn in ITEMS.items():
-        write_png(ITEM_DIR / (name + '.png'), 16, 16, fn())
+        rows = fn()
+        write_png(ITEM_DIR / (name + '.png'), len(rows), len(rows), rows)
     print('Texture oggetti generate: %d' % len(ITEMS))
 
 
